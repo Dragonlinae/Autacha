@@ -1,4 +1,5 @@
-import { StateVisualElement, EdgeVisualElement } from "./editorelements.js";
+import { StateVisualElement, EdgeVisualElement } from "./editorelementsClass.js";
+import { selectedElement } from "./selectedelementManager.js";
 
 (function () {
   var c = document.getElementById("editor-canvas");
@@ -8,7 +9,6 @@ import { StateVisualElement, EdgeVisualElement } from "./editorelements.js";
   var isDragging = false;
   var visualStates = [];
   var visualEdges = [];
-  var targetVisualElement = null;
   var canvasTransform = { x: 0, y: 0, scale: 1 };
 
 
@@ -26,13 +26,13 @@ import { StateVisualElement, EdgeVisualElement } from "./editorelements.js";
         var { x, y } = transformCoordinates(e.offsetX, e.offsetY);
         for (let i = visualStates.length - 1; i >= 0; i--) {
           if (visualStates[i].overlapsMove(x, y)) {
-            targetVisualElement = visualStates[i];
+            selectedElement.selectElement(visualStates[i]);
             isDragging = true;
             break;
           } else if (visualStates[i].overlapsInteract(x, y)) {
             isDrawingEdge = true;
             visualEdges.push(new EdgeVisualElement(visualEdges.length, visualStates[i], { x, y }));
-            targetVisualElement = visualEdges[visualEdges.length - 1];
+            selectedElement.selectElement(visualEdges[visualEdges.length - 1]);
             break;
           }
         }
@@ -55,10 +55,10 @@ import { StateVisualElement, EdgeVisualElement } from "./editorelements.js";
       canvasTransform.y += e.movementY;
     }
     if (isDragging) {
-      targetVisualElement.moveBy(e.movementX / canvasTransform.scale, e.movementY / canvasTransform.scale);
+      selectedElement.getSelectedElement().moveBy(e.movementX / canvasTransform.scale, e.movementY / canvasTransform.scale);
     }
     if (isDrawingEdge) {
-      targetVisualElement.to = transformCoordinates(e.offsetX, e.offsetY);
+      selectedElement.getSelectedElement().to = transformCoordinates(e.offsetX, e.offsetY);
     }
   });
 
@@ -69,22 +69,24 @@ import { StateVisualElement, EdgeVisualElement } from "./editorelements.js";
           isDragging = false;
         }
         if (isDrawingEdge) {
+          var { x, y } = transformCoordinates(e.offsetX, e.offsetY);
           for (let i = visualStates.length - 1; i >= 0; i--) {
-            if (visualStates[i].overlaps(targetVisualElement.to.x, targetVisualElement.to.y)) {
-              targetVisualElement.to = visualStates[i];
+            if (visualStates[i].overlaps(x, y)) {
+              selectedElement.getSelectedElement().to = visualStates[i];
               for (const edge of visualEdges) {
-                if (edge.from === targetVisualElement.from && edge.to === targetVisualElement.to && edge !== targetVisualElement) {
-                  visualEdges.splice(visualEdges.indexOf(targetVisualElement), 1);
-                  targetVisualElement = null;
+                if (edge.from === selectedElement.getSelectedElement().from && edge.to === selectedElement.getSelectedElement().to && edge !== selectedElement.getSelectedElement()) {
+                  visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
+                  selectedElement.deselectElement();
                   break;
                 }
               }
-              targetVisualElement = null;
+              selectedElement.deselectElement();
               break;
             }
           }
-          if (targetVisualElement) {
-            visualEdges.splice(visualEdges.length - 1, 1);
+          if (selectedElement.getSelectedElement() !== null) {
+            visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
+            selectedElement.deselectElement();
           }
           isDrawingEdge = false;
         }

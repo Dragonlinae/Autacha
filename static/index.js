@@ -27,5 +27,3 @@ function resize2(e) {
   }
   document.documentElement.style.setProperty('--splitter2-pos', (e.clientX / window.innerWidth) * 100 + '%');
 }
-
-var socket = io.connect('http://' + document.domain + ':' + location.port);

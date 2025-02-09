@@ -1,3 +1,5 @@
+import socket from "./socketManager.js";
+
 (function () {
   var regions = [];
 

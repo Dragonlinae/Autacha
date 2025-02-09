@@ -3,6 +3,7 @@ class VisualElement {
     this.id = id;
     this.x = x;
     this.y = y;
+    this.selected = false;
   }
   draw() {
     throw "draw() not implemented";
@@ -30,6 +31,12 @@ class VisualElement {
   getCoords() {
     return { x: this.x, y: this.y };
   }
+  select() {
+    this.selected = true;
+  }
+  unselect() {
+    this.selected = false;
+  }
 }
 
 class StateVisualElement extends VisualElement {
@@ -45,6 +52,9 @@ class StateVisualElement extends VisualElement {
     ctx.fillStyle = "#FFFFFF";
     ctx.fillRect(this.x, this.y, this.width, this.height);
     ctx.strokeStyle = "#707070";
+    if (this.selected) {
+      ctx.strokeStyle = "#0FF0F0";
+    }
     ctx.lineWidth = this.borderThickness + 1;
     ctx.strokeRect(this.x - this.borderThickness / 2, this.y - this.borderThickness / 2, this.width + this.borderThickness, this.height + this.borderThickness);
     ctx.fillStyle = "#000000";
