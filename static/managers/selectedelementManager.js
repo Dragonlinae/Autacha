@@ -1,4 +1,4 @@
-import { VisualElement } from "./editorelementsClass.js";
+import { VisualElement } from "../classes/editorelementsClass.js";
 
 class ElementSelector {
   constructor() {

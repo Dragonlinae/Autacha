@@ -1,4 +1,4 @@
-import { selectedElement } from "./selectedelementManager.js";
+import { selectedElement } from "../managers/selectedelementManager.js";
 
 (function () {
   var infoDiv = document.getElementById("inspector-info");

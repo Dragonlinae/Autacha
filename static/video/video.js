@@ -1,4 +1,4 @@
-import socket from "./socketManager.js";
+import socket from "../managers/socketManager.js";
 
 (function () {
   var regions = [];

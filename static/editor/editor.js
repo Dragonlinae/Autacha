@@ -1,5 +1,5 @@
-import { StateVisualElement, EdgeVisualElement } from "./editorelementsClass.js";
-import { selectedElement } from "./selectedelementManager.js";
+import { StateVisualElement, EdgeVisualElement } from "../classes/editorelementsClass.js";
+import { selectedElement } from "../managers/selectedelementManager.js";
 
 (function () {
   var c = document.getElementById("editor-canvas");
