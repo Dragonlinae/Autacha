@@ -1,0 +1,4 @@
+#video-canvas {
+  /* scale: var(--canvas-scale); */
+  transform-origin: 0 0;
+}

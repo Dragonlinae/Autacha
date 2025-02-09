@@ -1,0 +1,13 @@
+{% if head %}
+<link rel="stylesheet" type="text/css" href="/video.css">
+{% endif %}
+
+{% if body %}
+<canvas id="video-canvas" width="500" height="500">
+  <img id="vid" alt="video" hidden>
+</canvas>
+{% endif %}
+
+{% if scripts %}
+<script src="/video.js"></script>
+{% endif %}

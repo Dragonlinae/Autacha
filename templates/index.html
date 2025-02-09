@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Autacha</title>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+  {% with head=True %}
+  {% include "video.html" %}
+  {% include "editor.html" %}
+  {% include "inspector.html" %}
+  {% endwith %}
+</head>
+
+<body>
+  {% with body=True %}
+  <div class="columns">
+    <div class="column1">
+      <h2>Video</h2>
+      {% with body=True %}
+      {% include "video.html" %}
+      {% endwith %}
+    </div>
+    <div id="splitter1">
+    </div>
+    <div class="column2">
+      {% with body=True %}
+      {% include "editor.html" %}
+      {% endwith %}
+    </div>
+    <div id="splitter2">
+    </div>
+    <div class="column3">
+      <h2>Inspector</h2>
+      {% include "inspector.html" %}
+    </div>
+  </div>
+  {% endwith %}
+
+  {% with scripts=True %}
+  <script src="/socket.io.min.js"></script>
+  <script src="/index.js"></script>
+  {% include "video.html" %}
+  {% include "editor.html" %}
+  {% include "inspector.html" %}
+  {% endwith %}
+
+</html>

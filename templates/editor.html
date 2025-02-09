@@ -1,0 +1,13 @@
+{% if head %}
+<link rel="stylesheet" type="text/css" href="/editor.css">
+{% endif %}
+
+{% if body %}
+<div class="editor-div">
+  <canvas id="editor-canvas" width="500" height="500"></canvas>
+</div>
+{% endif %}
+
+{% if scripts %}
+<script src="/editor.js" type="module"></script>
+{% endif %}

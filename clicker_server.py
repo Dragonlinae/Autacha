@@ -4,8 +4,9 @@ import cv2
 import numpy as np
 from ahk import AHK
 import mouse_inputs
-from flask import Flask, request, jsonify
-import base64
+from flask import Flask, request, jsonify, Response, render_template
+from flask_socketio import SocketIO
+import json
 
 mouse_right_down_pos = None
 mouse_down_pos = None
@@ -33,7 +34,7 @@ title = "Arknights"
 ahk = AHK()
 ahk.run_script(
     f"Run, {target},,hide")
-win = ahk.win_wait(title=title, timeout=10)
+win = ahk.win_wait(title=title, timeout=30)
 time.sleep(1)
 win.to_bottom()
 print(win)
@@ -55,45 +56,117 @@ for control in win.list_controls():
     offset = (control.get_position().x, control.get_position().y)
     print("Offset applied", offset)
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path="",
+            static_folder="static", template_folder="templates")
+socket = SocketIO(app)
+
+
+def get_frame():
+  lastframe = None
+  while True:
+    frame = camera.get_last_frame()
+    if frame == lastframe:
+      time.sleep(0.01)
+      continue
+    lastframe = frame
+    img = cv2.imencode(".png", frame.frame_buffer)[1]
+    stringData = img.tostring()
+    yield (b'--frame\r\n'
+           b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n')
 
 
 @app.route("/", methods=["GET"])
 def index():
-  with open("index.html", "r") as f:
-    return f.read()
+  return render_template("index.html")
 
 
-@app.route("/newest_frame", methods=["GET"])
-def get_newest_frame():
-  frame = camera.get_last_frame()
-  img = cv2.imencode(".png", frame.frame_buffer)
-  return jsonify({"frame": base64.b64encode(img[1]).decode("utf-8")})
+@app.route("/vid", methods=["GET"])
+def vid():
+  return Response(get_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-@app.route("/click", methods=["POST"])
-def click():
-  print(request.json)
-  xpos = int(request.json["xpos"])
-  ypos = int(request.json["ypos"])
-  pos = (xpos, ypos)
-  mouse_inputs.click_mouse(win, pos, offset)
-  return jsonify({"status": "success"})
+@socket.on('mouse_event')
+def handle_action_event(data):
+  action = data.get("action")
+
+  if action == "click":
+    xpos = int(data["xpos"])
+    ypos = int(data["ypos"])
+    pos = (xpos, ypos)
+    mouse_inputs.click_mouse(win, pos, offset)
+    response = {"status": "success"}
+
+  elif action == "drag":
+    startx = int(data["startx"])
+    starty = int(data["starty"])
+    endx = int(data["endx"])
+    endy = int(data["endy"])
+    start = (startx, starty)
+    end = (endx, endy)
+    velocity = int(data["velocity"])
+    mouse_inputs.drag_mouse(win, start, end, velocity, offset)
+    response = {"status": "success"}
+
+  elif action == "dragStart":
+    xpos = int(data["xpos"])
+    ypos = int(data["ypos"])
+    pos = (xpos, ypos)
+    mouse_inputs.drag_start(win, pos, offset)
+    response = {"status": "success"}
+
+  elif action == "dragMove":
+    xpos = int(data["xpos"])
+    ypos = int(data["ypos"])
+    pos = (xpos, ypos)
+    mouse_inputs.drag_move(win, pos, offset)
+    response = {"status": "success"}
+
+  elif action == "dragEnd":
+    xpos = int(data["xpos"])
+    ypos = int(data["ypos"])
+    pos = (xpos, ypos)
+    mouse_inputs.drag_end(win, pos, offset)
+    response = {"status": "success"}
+
+  else:
+    response = {"status": "error", "message": "Invalid action"}
+
+  socket.emit('action_response', response)
 
 
-@app.route("/drag", methods=["POST"])
-def drag():
-  print(request.json)
-  startx = int(request.json["startx"])
-  starty = int(request.json["starty"])
-  endx = int(request.json["endx"])
-  endy = int(request.json["endy"])
-  start = (startx, starty)
-  end = (endx, endy)
-  velocity = int(request.json["velocity"])
-  mouse_inputs.drag_mouse(win, start, end, velocity, offset)
-  return jsonify({"status": "success"})
+@socket.on('mask_event')
+def handle_mask_event(data):
+  action = data.get("action")
+
+  if action == "rect":
+    xpos = int(data["xpos"])
+    ypos = int(data["ypos"])
+    width = int(data["width"])
+    height = int(data["height"])
+    rect_masks.append((xpos, ypos, width, height))
+    response = {"status": "success"}
+
+  elif action == "save":
+    saved_masks.extend(rect_masks)
+    rect_masks.clear()
+    response = {"status": "success"}
+
+  elif action == "clear":
+    rect_masks.clear()
+    response = {"status": "success"}
+
+  elif action == "apply":
+    saved_mask = np.zeros((frame.height, frame.width), np.uint8)
+    for mask in saved_masks:
+      xpos, ypos, width, height = mask
+      saved_mask[ypos:ypos+height, xpos:xpos+width] = 1
+    response = {"status": "success"}
+
+  else:
+    response = {"status": "error", "message": "Invalid action"}
+
+  socket.emit('mask_response', response)
 
 
 if __name__ == "__main__":
-  app.run()
+  socket.run(app, debug=True)

@@ -22,6 +22,21 @@ def drag_mouse(win, start, end, velocity, offset):
   win.click(end[0], end[1], options="U NA")
 
 
+def drag_start(win, pos, offset):
+  pos = (pos[0] + offset[0], pos[1] + offset[1])
+  win.click(pos[0], pos[1], options="D NA")
+
+
+def drag_move(win, pos, offset):
+  pos = (pos[0] + offset[0], pos[1] + offset[1])
+  win.click(pos[0], pos[1], options="D NA")
+
+
+def drag_end(win, pos, offset):
+  pos = (pos[0] + offset[0], pos[1] + offset[1])
+  win.click(pos[0], pos[1], options="U NA")
+
+
 def click_mouse(win, pos, offset):
   pos = (pos[0] + offset[0], pos[1] + offset[1])
   win.click(pos[0], pos[1])
