@@ -3,10 +3,17 @@
 
 {% if body %}
 <div class="inspector-div">
-  <p id="inspector-info"></p>
+  <div id="inspector-state">
+    {% include "inspectorstate.html" %}
+  </div>
+  <div id="inspector-edge">
+    {% include "inspectoredge.html" %}
+  </div>
 </div>
 {% endif %}
 
 {% if scripts %}
 <script src="/inspector/inspector.js" type="module"></script>
+{% include "inspectorstate.html" %}
+{% include "inspectoredge.html" %}
 {% endif %}

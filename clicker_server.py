@@ -7,6 +7,7 @@ import mouse_inputs
 from flask import Flask, request, jsonify, Response, render_template
 from flask_socketio import SocketIO
 import json
+import base64
 
 mouse_right_down_pos = None
 mouse_down_pos = None
@@ -61,7 +62,22 @@ app = Flask(__name__, static_url_path="",
 socket = SocketIO(app)
 
 
-def get_frame():
+def get_thumbnail():
+  frame = camera.get_last_frame()
+  img_encoded = cv2.imencode(".png", frame.frame_buffer)[1]
+  img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
+  # Resize whichever dimension is larger to 512 px
+  h, w = img.shape[:2]
+  if h > w:
+    img = cv2.resize(img, (int(w * 256 / h), 256))
+  else:
+    img = cv2.resize(img, (256, int(h * 256 / w)))
+  img_encoded = cv2.imencode(".png", img)[1]
+  stringData = base64.b64encode(img_encoded)
+  return stringData
+
+
+def stream_frames():
   lastframe = None
   while True:
     frame = camera.get_last_frame()
@@ -82,7 +98,7 @@ def index():
 
 @app.route("/vid", methods=["GET"])
 def vid():
-  return Response(get_frame(), mimetype='multipart/x-mixed-replace; boundary=frame')
+  return Response(stream_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
 @socket.on('mouse_event')
@@ -166,6 +182,11 @@ def handle_mask_event(data):
     response = {"status": "error", "message": "Invalid action"}
 
   socket.emit('mask_response', response)
+
+
+@socket.on('saveFrameThumbnail')
+def handle_save_thumbnail(data):
+  socket.emit('frameThumbnail', {"image": get_thumbnail()})
 
 
 if __name__ == "__main__":

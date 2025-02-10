@@ -61,11 +61,7 @@ class StateVisualElement extends VisualElement {
     ctx.font = "12px Arial";
     ctx.fillText(this.text, this.x + 10, this.y + 25);
     if (this.image) {
-      const img = new Image();
-      img.src = this.image;
-      img.onload = () => {
-        ctx.drawImage(img, this.x + 10, this.y + 30, 20, 20);
-      };
+      ctx.drawImage(this.image, this.x + 10, this.y + 30, this.width - 20, this.image.height * (this.width - 20) / this.image.width);
     }
   }
   overlapsMove(x, y) {
@@ -83,17 +79,48 @@ class EdgeVisualElement extends VisualElement {
     this.to = to;
   }
   draw(ctx) {
+    var fromX = this.from.x + this.from.width / 2;
+    var fromY = this.from.y + this.from.height / 2;
+    var toX = this.to.x;
+    var toY = this.to.y;
+    if (this.to instanceof StateVisualElement) {
+      toX = this.to.x + this.to.width / 2;
+      toY = this.to.y + this.to.height / 2;
+    }
+
     ctx.beginPath();
-    ctx.moveTo(this.from.x + this.from.width / 2, this.from.y + this.from.height / 2);
-    const toX = this.to.x + (this.to.width ? this.to.width / 2 : 0);
-    const toY = this.to.y + (this.to.height ? this.to.height / 2 : 0);
+    ctx.moveTo(fromX, fromY);
     ctx.lineTo(toX, toY);
+
+    const angle = Math.atan2(toY - fromY, toX - fromX);
+    const centerX = (fromX + toX) / 2;
+    const centerY = (fromY + toY) / 2;
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX - 10 * Math.cos(angle - Math.PI / 6), centerY - 10 * Math.sin(angle - Math.PI / 6));
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX - 10 * Math.cos(angle + Math.PI / 6), centerY - 10 * Math.sin(angle + Math.PI / 6));
+
     ctx.strokeStyle = "#000000";
+    if (this.selected) {
+      ctx.strokeStyle = "#0FF0F0";
+    }
     ctx.lineWidth = 2;
     ctx.stroke();
   }
   overlapsMove(x, y) {
-    return false;
+    var fromX = this.from.x + this.from.width / 2;
+    var fromY = this.from.y + this.from.height / 2;
+    var toX = this.to.x;
+    var toY = this.to.y;
+    if (this.to instanceof StateVisualElement) {
+      toX = this.to.x + this.to.width / 2;
+      toY = this.to.y + this.to.height / 2;
+    }
+    var dx = toX - fromX;
+    var dy = toY - fromY;
+    var length = Math.sqrt(dx * dx + dy * dy);
+    var distance = Math.abs(dy * x - dx * y + toX * fromY - toY * fromX) / length;
+    return distance <= 5;
   }
   overlapsInteract(x, y) {
     return false;

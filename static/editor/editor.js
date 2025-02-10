@@ -1,5 +1,6 @@
 import { StateVisualElement, EdgeVisualElement } from "../classes/editorelementsClass.js";
 import { selectedElement } from "../managers/selectedelementManager.js";
+import socket from "../managers/socketManager.js";
 
 (function () {
   var c = document.getElementById("editor-canvas");
@@ -23,23 +24,37 @@ import { selectedElement } from "../managers/selectedelementManager.js";
     console.log(e);
     switch (e.button) {
       case 0:
+        selectedElement.deselectElement();
         var { x, y } = transformCoordinates(e.offsetX, e.offsetY);
-        for (let i = visualStates.length - 1; i >= 0; i--) {
-          if (visualStates[i].overlapsMove(x, y)) {
-            selectedElement.selectElement(visualStates[i]);
+        for (const state of visualStates) {
+          if (state.overlapsMove(x, y)) {
+            selectedElement.selectElement(state);
             isDragging = true;
             break;
-          } else if (visualStates[i].overlapsInteract(x, y)) {
+          } else if (state.overlapsInteract(x, y)) {
             isDrawingEdge = true;
-            visualEdges.push(new EdgeVisualElement(visualEdges.length, visualStates[i], { x, y }));
+            visualEdges.push(new EdgeVisualElement(visualEdges.length, state, { x, y }));
             selectedElement.selectElement(visualEdges[visualEdges.length - 1]);
             break;
           }
         }
-        if (isDragging || isDrawingEdge) {
+        if (selectedElement.getSelectedElement() !== null) {
           break;
         }
+
+        for (const edge of visualEdges) {
+          if (edge.overlapsMove(x, y)) {
+            selectedElement.selectElement(edge);
+            break;
+          }
+        }
+        if (selectedElement.getSelectedElement() !== null) {
+          break;
+        }
+
         visualStates.push(new StateVisualElement(visualStates.length, x, y, "State " + visualStates.length));
+        selectedElement.selectElement(visualStates[visualStates.length - 1]);
+        socket.emit("saveFrameThumbnail", { targetElement: selectedElement.getSelectedElement().getId() });
         break;
       case 1:
         break;
@@ -70,21 +85,28 @@ import { selectedElement } from "../managers/selectedelementManager.js";
         }
         if (isDrawingEdge) {
           var { x, y } = transformCoordinates(e.offsetX, e.offsetY);
+          var completedEdge = false
           for (let i = visualStates.length - 1; i >= 0; i--) {
             if (visualStates[i].overlaps(x, y)) {
               selectedElement.getSelectedElement().to = visualStates[i];
+              if (selectedElement.getSelectedElement().from === selectedElement.getSelectedElement().to) {
+                visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
+                selectedElement.deselectElement();
+                completedEdge = true;
+                break;
+              }
               for (const edge of visualEdges) {
-                if (edge.from === selectedElement.getSelectedElement().from && edge.to === selectedElement.getSelectedElement().to && edge !== selectedElement.getSelectedElement()) {
+                if (((edge.from === selectedElement.getSelectedElement().from && edge.to === selectedElement.getSelectedElement().to) || (edge.from === selectedElement.getSelectedElement().to && edge.to === selectedElement.getSelectedElement().from)) && edge !== selectedElement.getSelectedElement()) {
                   visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
                   selectedElement.deselectElement();
                   break;
                 }
               }
-              selectedElement.deselectElement();
+              completedEdge = true;
               break;
             }
           }
-          if (selectedElement.getSelectedElement() !== null) {
+          if (!completedEdge) {
             visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
             selectedElement.deselectElement();
           }
@@ -106,7 +128,22 @@ import { selectedElement } from "../managers/selectedelementManager.js";
     canvasTransform.scale *= (1 + e.deltaY * -0.001);
   });
 
-  c.addEventListener('contextmenu', e => e.preventDefault()); // Prevent context menu on right-click
+  c.addEventListener('contextmenu', e => e.preventDefault());
+
+  c.addEventListener('keydown', e => {
+    console.log(e);
+    if (e.key === "Delete") {
+      if (selectedElement.getSelectedElement() !== null) {
+        if (selectedElement.getSelectedElement() instanceof StateVisualElement) {
+          visualStates.splice(visualStates.indexOf(selectedElement.getSelectedElement()), 1);
+          visualEdges = visualEdges.filter(edge => edge.from !== selectedElement.getSelectedElement() && edge.to !== selectedElement.getSelectedElement());
+        } else if (selectedElement.getSelectedElement() instanceof EdgeVisualElement) {
+          visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
+        }
+        selectedElement.deselectElement();
+      }
+    }
+  });
 
   function updateCanvasSize() {
     c.width = c.parentElement.clientWidth;
