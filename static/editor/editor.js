@@ -55,7 +55,6 @@ import socket from "../managers/socketManager.js";
 
         visualStates.push(new StateVisualElement(idCounter++, x, y, "State " + (idCounter - 1)));
         selectedElement.selectElement(visualStates[visualStates.length - 1]);
-        socket.emit("saveFrameThumbnail", { targetElement: selectedElement.getSelectedElement().getId() });
         break;
       case 1:
         break;

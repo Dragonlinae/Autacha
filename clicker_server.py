@@ -184,9 +184,11 @@ def handle_mask_event(data):
   socket.emit('mask_response', response)
 
 
-@socket.on('saveFrameThumbnail')
+@socket.on('getFrameThumbnail')
 def handle_save_thumbnail(data):
-  socket.emit('frameThumbnail', {"image": get_thumbnail()})
+  if "id" not in data:
+    data["id"] = -1
+  socket.emit('frameThumbnail', {"image": get_thumbnail(), "id": data["id"]})
 
 
 if __name__ == "__main__":
