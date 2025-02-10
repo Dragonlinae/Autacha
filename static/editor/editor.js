@@ -11,6 +11,7 @@ import socket from "../managers/socketManager.js";
   var visualStates = [];
   var visualEdges = [];
   var canvasTransform = { x: 0, y: 0, scale: 1 };
+  var idCounter = 0;
 
 
   function transformCoordinates(x, y) {
@@ -33,7 +34,7 @@ import socket from "../managers/socketManager.js";
             break;
           } else if (state.overlapsInteract(x, y)) {
             isDrawingEdge = true;
-            visualEdges.push(new EdgeVisualElement(visualEdges.length, state, { x, y }));
+            visualEdges.push(new EdgeVisualElement(idCounter++, state, { x, y }));
             selectedElement.selectElement(visualEdges[visualEdges.length - 1]);
             break;
           }
@@ -52,7 +53,7 @@ import socket from "../managers/socketManager.js";
           break;
         }
 
-        visualStates.push(new StateVisualElement(visualStates.length, x, y, "State " + visualStates.length));
+        visualStates.push(new StateVisualElement(idCounter++, x, y, "State " + (idCounter - 1)));
         selectedElement.selectElement(visualStates[visualStates.length - 1]);
         socket.emit("saveFrameThumbnail", { targetElement: selectedElement.getSelectedElement().getId() });
         break;
