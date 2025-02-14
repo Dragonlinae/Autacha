@@ -27,6 +27,11 @@ class Element:
       if key in data:
         setattr(self, key, data[key])
 
+  def safe_update(self, data):
+    self.x = data.get("x", self.x)
+    self.y = data.get("y", self.y)
+    self.name = data.get("name", self.name)
+
   def get_data(self):
     data = {key: value for key, value in self.__dict__.items()}
     return data
@@ -46,6 +51,29 @@ class State(Element):
 
   def update(self, data):
     super().update(data)
+
+  def safe_update(self, data):
+    super().safe_update(data)
+    self.width = data.get("width", self.width)
+    self.height = data.get("height", self.height)
+
+  def add_outgoing_edge(self, edge_id):
+    self.outgoingEdges.append(edge_id)
+
+  def add_incoming_edge(self, edge_id):
+    self.incomingEdges.append(edge_id)
+
+  def remove_outgoing_edge(self, edge_id):
+    self.outgoingEdges.remove(edge_id)
+
+  def remove_incoming_edge(self, edge_id):
+    self.incomingEdges.remove(edge_id)
+
+  def remove_edge(self, edge_id):
+    if edge_id in self.outgoingEdges:
+      self.outgoingEdges.remove(edge_id)
+    elif edge_id in self.incomingEdges:
+      self.incomingEdges.remove(edge_id)
 
   # def get_data(self):
   #   return {
@@ -74,6 +102,9 @@ class Edge(Element):
 
   def update(self, data):
     super().update(data)
+
+  def safe_update(self, data):
+    super().safe_update(data)
 
   # def get_data(self):
   #   return {

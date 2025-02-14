@@ -58,8 +58,6 @@ class StateVisualElement extends VisualElement {
       name: "State",
       image: null,
       imageElement: null,
-      outgoingEdges: [],
-      incomingEdges: []
     };
     super(Object.assign({}, defaultData, data));
     if (data.image) {
@@ -113,6 +111,15 @@ class EdgeVisualElement extends VisualElement {
     };
     super(Object.assign({}, defaultData, data));
   }
+  offsetPerpendicular(sourceX, sourceY, targetX, targetY, offset) {
+    var dx = targetX - sourceX;
+    var dy = targetY - sourceY;
+    var length = Math.sqrt(dx * dx + dy * dy);
+    var offsetX = offset * dy / length;
+    var offsetY = -offset * dx / length;
+    return { x: offsetX, y: offsetY };
+  }
+
   draw(ctx) {
     var sourceX = this.sourceState.x + this.sourceState.width / 2;
     var sourceY = this.sourceState.y + this.sourceState.height / 2;
@@ -121,6 +128,15 @@ class EdgeVisualElement extends VisualElement {
     if (this.targetState instanceof StateVisualElement) {
       targetX = this.targetState.x + this.targetState.width / 2;
       targetY = this.targetState.y + this.targetState.height / 2;
+    }
+
+    // offset perpendicular to the line
+    if (!(this instanceof TempEdgeVisualElement)) {
+      var offset = this.offsetPerpendicular(sourceX, sourceY, targetX, targetY, 10);
+      sourceX += offset.x;
+      sourceY += offset.y;
+      targetX += offset.x;
+      targetY += offset.y;
     }
 
     ctx.beginPath();
@@ -145,12 +161,16 @@ class EdgeVisualElement extends VisualElement {
   overlapsMove(x, y) {
     var sourceX = this.sourceState.x + this.sourceState.width / 2;
     var sourceY = this.sourceState.y + this.sourceState.height / 2;
-    var targetX = this.targetState.x;
-    var targetY = this.targetState.y;
-    if (this.targetState instanceof StateVisualElement) {
-      targetX = this.targetState.x + this.targetState.width / 2;
-      targetY = this.targetState.y + this.targetState.height / 2;
-    }
+    var targetX = this.targetState.x + this.targetState.width / 2;
+    var targetY = this.targetState.y + this.targetState.height / 2;
+
+    // offset perpendicular to the line
+    var offset = this.offsetPerpendicular(sourceX, sourceY, targetX, targetY, 10);
+    sourceX += offset.x;
+    sourceY += offset.y;
+    targetX += offset.x;
+    targetY += offset.y;
+
     var dx = targetX - sourceX;
     var dy = targetY - sourceY;
     var length = Math.sqrt(dx * dx + dy * dy);

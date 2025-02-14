@@ -133,7 +133,11 @@ def handle_action_event(data):
 @socket.on('state_event')
 def handle_state_event(data):
   res = stateTracker.update(data)
-  socket.emit('state_update', res.get_data())
+  if res is not None:
+    if isinstance(res, dict):
+      socket.emit('state_update', res)
+    else:
+      socket.emit('state_update', res.get_data())
 
 
 @socket.on('mask_event')

@@ -27,24 +27,41 @@ import socket from "../managers/socketManager.js";
   var ctx = c.getContext("2d");
   var lastX = 0;
   var lastY = 0;
-  var isDrawing = false;
-  c.addEventListener('mousedown', e => {
+  var isLeft = false;
+  var isRight = false;
+  c.addEventListener('pointerdown', e => {
     lastX = e.offsetX;
     lastY = e.offsetY;
-    isDrawing = true;
-    dragStart(lastX, lastY);
+    switch (e.button) {
+      case 0:
+        isLeft = true;
+        dragStart(lastX, lastY);
+        break;
+      case 1:
+        break;
+      case 2:
+        break;
+    }
   });
 
-  c.addEventListener('mousemove', e => {
-    if (isDrawing) {
+  c.addEventListener('pointermove', e => {
+    if (isLeft) {
       dragMove(e.offsetX, e.offsetY);
     }
   });
 
-  c.addEventListener('mouseup', e => {
-    if (isDrawing) {
-      dragEnd(e.offsetX, e.offsetY);
-      isDrawing = false;
+  c.addEventListener('pointerup', e => {
+    switch (e.button) {
+      case 0:
+        if (isLeft) {
+          dragEnd(e.offsetX, e.offsetY);
+          isLeft = false;
+        }
+        break;
+      case 1:
+        break;
+      case 2:
+        break;
     }
   });
 

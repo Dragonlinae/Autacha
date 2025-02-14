@@ -51,6 +51,7 @@ import socket from "../managers/socketManager.js";
         break;
       case 2:
         isPanning = true;
+        selectedElement.deselectElement();
         break;
     }
   });
@@ -103,7 +104,7 @@ import socket from "../managers/socketManager.js";
   c.addEventListener('contextmenu', e => e.preventDefault());
 
   c.addEventListener('keydown', e => {
-    if (e.key === "Delete") {
+    if (e.key === "Delete" && selectedElement.getSelectedElement() !== null) {
       requestDeleteElement(selectedElement.getSelectedElement().getId());
     }
   });

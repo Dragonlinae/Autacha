@@ -116,16 +116,15 @@ class ElementManager {
   }
 
   deleteElement(id) {
-    for (let i = 0; i < this.visualStates.length; i++) {
+    console.log("Deleting element with id: " + id);
+    for (let i = this.visualStates.length - 1; i >= 0; i--) {
       if (this.visualStates[i].id === id) {
         this.visualStates.splice(i, 1);
-        return;
       }
     }
-    for (let i = 0; i < this.visualEdges.length; i++) {
-      if (this.visualEdges[i].id === id) {
+    for (let i = this.visualEdges.length - 1; i >= 0; i--) {
+      if (this.visualEdges[i].id === id || this.visualEdges[i].sourceStateId === id || this.visualEdges[i].targetStateId === id) {
         this.visualEdges.splice(i, 1);
-        return;
       }
     }
   }
@@ -137,14 +136,16 @@ class ElementManager {
 
     const element = this.findElement(data.id);
     if (element !== null) {
-      element.update(data);
+      if (data.type === "Delete") {
+        this.deleteElement(data.id);
+      } else {
+        element.update(data);
+      }
     } else {
       if (data.type === "State") {
         this.addState(data);
       } else if (data.type === "Edge") {
         this.addEdge(data);
-      } else if (data.type === "Delete") {
-        this.deleteElement(data.id);
       }
     }
   }

@@ -5,21 +5,21 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
   var insState = document.getElementById("inspector-state");
   var insEdge = document.getElementById("inspector-edge");
 
-  insState.style.display = "none";
-  insEdge.style.display = "none";
+  insState.hidden = true;
+  insEdge.hidden = true;
 
   function updateInspector() {
     if (selectedElement.getSelectedElement()) {
       if (selectedElement.getSelectedElement() instanceof StateVisualElement) {
-        insState.style.display = "block";
-        insEdge.style.display = "none";
+        insState.hidden = false;
+        insEdge.hidden = true;
       } else if (selectedElement.getSelectedElement() instanceof EdgeVisualElement) {
-        insState.style.display = "none";
-        insEdge.style.display = "block";
+        insState.hidden = true;
+        insEdge.hidden = false;
       }
     } else {
-      insState.style.display = "none";
-      insEdge.style.display = "none";
+      insState.hidden = true;
+      insEdge.hidden = true;
     }
   }
   selectedElement.onSelect(updateInspector);
