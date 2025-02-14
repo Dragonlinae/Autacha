@@ -1,5 +1,6 @@
-import { StateVisualElement, EdgeVisualElement } from "../classes/editorelementsClass.js";
+import { StateVisualElement, EdgeVisualElement, TempEdgeVisualElement } from "../classes/editorelementsClass.js";
 import { selectedElement } from "../managers/selectedelementManager.js";
+import { ElementManager } from "../managers/elementManager.js";
 import socket from "../managers/socketManager.js";
 
 (function () {
@@ -8,10 +9,9 @@ import socket from "../managers/socketManager.js";
   var isDrawingEdge = false;
   var isPanning = false;
   var isDragging = false;
-  var visualStates = [];
-  var visualEdges = [];
+  var dragOffset = { x: 0, y: 0 };
+  var elementManager = new ElementManager();
   var canvasTransform = { x: 0, y: 0, scale: 1 };
-  var idCounter = 0;
 
 
   function transformCoordinates(x, y) {
@@ -22,40 +22,31 @@ import socket from "../managers/socketManager.js";
   }
 
   c.addEventListener('pointerdown', e => {
-    console.log(e);
     switch (e.button) {
       case 0:
         selectedElement.deselectElement();
         var { x, y } = transformCoordinates(e.offsetX, e.offsetY);
-        for (const state of visualStates) {
-          if (state.overlapsMove(x, y)) {
-            selectedElement.selectElement(state);
-            isDragging = true;
-            break;
-          } else if (state.overlapsInteract(x, y)) {
-            isDrawingEdge = true;
-            visualEdges.push(new EdgeVisualElement(idCounter++, state, { x, y }));
-            selectedElement.selectElement(visualEdges[visualEdges.length - 1]);
-            break;
-          }
-        }
-        if (selectedElement.getSelectedElement() !== null) {
-          break;
-        }
 
-        for (const edge of visualEdges) {
-          if (edge.overlapsMove(x, y)) {
-            selectedElement.selectElement(edge);
-            break;
+        var overlap = elementManager.findOverlap(x, y);
+        if (overlap !== null) {
+          const { element, type } = overlap;
+          selectedElement.selectElement(element);
+          dragOffset = { x: x - element.x, y: y - element.y };
+          switch (type) {
+            case "State":
+              isDragging = true;
+              break;
+            case "StateInteract":
+              isDrawingEdge = true;
+              elementManager.startTempEdge(element, x, y);
+              break;
+            case "Edge":
+              isDragging = true;
+              break;
           }
+        } else {
+          requestAddState(x, y);
         }
-        if (selectedElement.getSelectedElement() !== null) {
-          break;
-        }
-
-        visualStates.push(new StateVisualElement(idCounter++, x, y, "State " + (idCounter - 1)));
-        selectedElement.selectElement(visualStates[visualStates.length - 1]);
-        break;
       case 1:
         break;
       case 2:
@@ -70,10 +61,10 @@ import socket from "../managers/socketManager.js";
       canvasTransform.y += e.movementY;
     }
     if (isDragging) {
-      selectedElement.getSelectedElement().moveBy(e.movementX / canvasTransform.scale, e.movementY / canvasTransform.scale);
+      selectedElement.getSelectedElement().moveTo(transformCoordinates(e.offsetX, e.offsetY).x - dragOffset.x, transformCoordinates(e.offsetX, e.offsetY).y - dragOffset.y);
     }
     if (isDrawingEdge) {
-      selectedElement.getSelectedElement().to = transformCoordinates(e.offsetX, e.offsetY);
+      elementManager.updateTempEdge(transformCoordinates(e.offsetX, e.offsetY));
     }
   });
 
@@ -82,35 +73,16 @@ import socket from "../managers/socketManager.js";
       case 0:
         if (isDragging) {
           isDragging = false;
+          requestUpdateElement(selectedElement.getSelectedElement());
         }
         if (isDrawingEdge) {
-          var { x, y } = transformCoordinates(e.offsetX, e.offsetY);
-          var completedEdge = false
-          for (let i = visualStates.length - 1; i >= 0; i--) {
-            if (visualStates[i].overlaps(x, y)) {
-              selectedElement.getSelectedElement().to = visualStates[i];
-              if (selectedElement.getSelectedElement().from === selectedElement.getSelectedElement().to) {
-                visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
-                selectedElement.deselectElement();
-                completedEdge = true;
-                break;
-              }
-              for (const edge of visualEdges) {
-                if (((edge.from === selectedElement.getSelectedElement().from && edge.to === selectedElement.getSelectedElement().to) || (edge.from === selectedElement.getSelectedElement().to && edge.to === selectedElement.getSelectedElement().from)) && edge !== selectedElement.getSelectedElement()) {
-                  visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
-                  selectedElement.deselectElement();
-                  break;
-                }
-              }
-              completedEdge = true;
-              break;
-            }
-          }
-          if (!completedEdge) {
-            visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
-            selectedElement.deselectElement();
-          }
           isDrawingEdge = false;
+          selectedElement.deselectElement();
+          var { x, y } = transformCoordinates(e.offsetX, e.offsetY);
+          var result = elementManager.endTempEdge(x, y);
+          if (result !== null) {
+            requestAddEdge(result.sourceStateID, result.targetStateID);
+          }
         }
         break;
       case 1:
@@ -126,22 +98,13 @@ import socket from "../managers/socketManager.js";
     canvasTransform.x -= mouseX * (e.deltaY * -0.001) * canvasTransform.scale;
     canvasTransform.y -= mouseY * (e.deltaY * -0.001) * canvasTransform.scale;
     canvasTransform.scale *= (1 + e.deltaY * -0.001);
-  });
+  }, { passive: true });
 
   c.addEventListener('contextmenu', e => e.preventDefault());
 
   c.addEventListener('keydown', e => {
-    console.log(e);
     if (e.key === "Delete") {
-      if (selectedElement.getSelectedElement() !== null) {
-        if (selectedElement.getSelectedElement() instanceof StateVisualElement) {
-          visualStates.splice(visualStates.indexOf(selectedElement.getSelectedElement()), 1);
-          visualEdges = visualEdges.filter(edge => edge.from !== selectedElement.getSelectedElement() && edge.to !== selectedElement.getSelectedElement());
-        } else if (selectedElement.getSelectedElement() instanceof EdgeVisualElement) {
-          visualEdges.splice(visualEdges.indexOf(selectedElement.getSelectedElement()), 1);
-        }
-        selectedElement.deselectElement();
-      }
+      requestDeleteElement(selectedElement.getSelectedElement().getId());
     }
   });
 
@@ -154,12 +117,7 @@ import socket from "../managers/socketManager.js";
     ctx.setTransform(canvasTransform.scale, 0, 0, canvasTransform.scale, canvasTransform.x, canvasTransform.y);
     ctx.clearRect(0, 0, c.width, c.height);
 
-    for (const element of visualEdges) {
-      element.draw(ctx);
-    }
-    for (const element of visualStates) {
-      element.draw(ctx);
-    }
+    elementManager.drawElements(ctx);
   }
 
   function updateCanvas() {
@@ -171,4 +129,52 @@ import socket from "../managers/socketManager.js";
   c.width = document.documentElement.clientWidth;
   c.height = document.documentElement.clientHeight;
   updateCanvas();
+
+  function requestAddState(x, y) {
+    socket.emit('state_event', { type: 'State', x, y });
+  }
+
+  function requestAddEdge(sourceState, targetState) {
+    socket.emit('state_event', { type: 'Edge', sourceState, targetState });
+  }
+
+  function requestUpdateElement(element) {
+    socket.emit('state_event', { ...element });
+  }
+
+  function requestDeleteElement(id) {
+    socket.emit('state_event', { type: 'Delete', id });
+  }
+
+  socket.on('state_update', data => {
+    console.log(data);
+    elementManager.updateElement(data);
+  });
+
+  function initializeData() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', '/all_states', true);
+    xhr.onreadystatechange = function () {
+      if (xhr.readyState === 4 && xhr.status === 200) {
+        const data = JSON.parse(xhr.responseText);
+        for (const state of data.states) {
+          elementManager.updateElement(state);
+          if (state.selected) {
+            selectedElement.selectedElement = elementManager.findElement(state.id);
+          }
+        }
+        for (const edge of data.edges) {
+          elementManager.updateElement(edge);
+          if (edge.selected) {
+            selectedElement.selectedElement = elementManager.findElement(edge.id);
+          }
+        }
+      }
+    };
+    xhr.send();
+  }
+
+  initializeData();
+
+
 })();

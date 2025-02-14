@@ -10,7 +10,6 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
 
   function updateInspector() {
     if (selectedElement.getSelectedElement()) {
-      // infoDiv.innerHTML = "You selected " + selectedElement.getSelectedElement().getId() + " which is a " + selectedElement.getSelectedElement().constructor.name;
       if (selectedElement.getSelectedElement() instanceof StateVisualElement) {
         insState.style.display = "block";
         insEdge.style.display = "none";

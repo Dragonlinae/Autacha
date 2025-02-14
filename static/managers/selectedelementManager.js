@@ -1,4 +1,4 @@
-import { VisualElement } from "../classes/editorelementsClass.js";
+import { TempEdgeVisualElement } from "../classes/editorelementsClass.js";
 
 class ElementSelector {
   constructor() {
@@ -7,9 +7,10 @@ class ElementSelector {
   }
 
   selectElement(element) {
-    if (this.selectedElement) {
-      this.selectedElement.unselect();
+    if (this.selectedElement === element) {
+      return;
     }
+    this.deselectElement();
     this.selectedElement = element;
     this.selectedElement.select();
     if (this.selectCallback) {
@@ -19,7 +20,7 @@ class ElementSelector {
 
   deselectElement() {
     if (this.selectedElement) {
-      this.selectedElement.unselect();
+      this.selectedElement.deselect();
       this.selectedElement = null;
     }
   }

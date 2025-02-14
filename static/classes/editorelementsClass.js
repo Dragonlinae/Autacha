@@ -1,9 +1,18 @@
 class VisualElement {
-  constructor(id, x, y) {
-    this.id = id;
-    this.x = x;
-    this.y = y;
-    this.selected = false;
+  constructor(data) {
+    const defaultData = {
+      id: -1,
+      type: "Element",
+      x: 0,
+      y: 0,
+      selected: false,
+      playing: false,
+      name: "Element"
+    };
+    Object.assign(this, defaultData, data);
+  }
+  update(data) {
+    Object.assign(this, data);
   }
   draw() {
     throw "draw() not implemented";
@@ -34,19 +43,34 @@ class VisualElement {
   select() {
     this.selected = true;
   }
-  unselect() {
+  deselect() {
     this.selected = false;
   }
 }
 
 class StateVisualElement extends VisualElement {
-  constructor(id, x, y, text, image) {
-    super(id, x, y);
-    this.text = text;
-    this.image = image;
-    this.width = 100;
-    this.height = 50;
-    this.borderThickness = 10;
+  constructor(data) {
+    const defaultData = {
+      type: "State",
+      width: 100,
+      height: 50,
+      borderThickness: 10,
+      name: "State",
+      image: null,
+      imageElement: null,
+      outgoingEdges: [],
+      incomingEdges: []
+    };
+    super(Object.assign({}, defaultData, data));
+  }
+  update(data) {
+    super.update(data);
+    if (data.image) {
+      var base64Image = String.fromCharCode(...new Uint8Array(data.image));
+      var img = new Image();
+      img.src = "data:image/png;base64," + base64Image;
+      this.imageElement = img;
+    }
   }
   draw(ctx) {
     ctx.fillStyle = "#FFFFFF";
@@ -59,9 +83,9 @@ class StateVisualElement extends VisualElement {
     ctx.strokeRect(this.x - this.borderThickness / 2, this.y - this.borderThickness / 2, this.width + this.borderThickness, this.height + this.borderThickness);
     ctx.fillStyle = "#000000";
     ctx.font = "12px Arial";
-    ctx.fillText(this.text, this.x + 10, this.y + 25);
-    if (this.image) {
-      ctx.drawImage(this.image, this.x + 10, this.y + 30, this.width - 20, this.image.height * (this.width - 20) / this.image.width);
+    ctx.fillText(this.name, this.x + 10, this.y + 25);
+    if (this.imageElement) {
+      ctx.drawImage(this.imageElement, this.x + 10, this.y + 30, this.width - 20, this.imageElement.height * (this.width - 20) / this.imageElement.width);
     }
   }
   overlapsMove(x, y) {
@@ -73,28 +97,35 @@ class StateVisualElement extends VisualElement {
 }
 
 class EdgeVisualElement extends VisualElement {
-  constructor(id, from, to) {
-    super(id, from.x, from.y);
-    this.from = from;
-    this.to = to;
+  constructor(data) {
+    const defaultData = {
+      type: "Edge",
+      sourceStateId: -1,
+      targetStateId: -1,
+      sourceState: null,
+      targetState: null,
+      lineThickness: 2,
+      name: "Edge"
+    };
+    super(Object.assign({}, defaultData, data));
   }
   draw(ctx) {
-    var fromX = this.from.x + this.from.width / 2;
-    var fromY = this.from.y + this.from.height / 2;
-    var toX = this.to.x;
-    var toY = this.to.y;
-    if (this.to instanceof StateVisualElement) {
-      toX = this.to.x + this.to.width / 2;
-      toY = this.to.y + this.to.height / 2;
+    var sourceX = this.sourceState.x + this.sourceState.width / 2;
+    var sourceY = this.sourceState.y + this.sourceState.height / 2;
+    var targetX = this.targetState.x;
+    var targetY = this.targetState.y;
+    if (this.targetState instanceof StateVisualElement) {
+      targetX = this.targetState.x + this.targetState.width / 2;
+      targetY = this.targetState.y + this.targetState.height / 2;
     }
 
     ctx.beginPath();
-    ctx.moveTo(fromX, fromY);
-    ctx.lineTo(toX, toY);
+    ctx.moveTo(sourceX, sourceY);
+    ctx.lineTo(targetX, targetY);
 
-    const angle = Math.atan2(toY - fromY, toX - fromX);
-    const centerX = (fromX + toX) / 2;
-    const centerY = (fromY + toY) / 2;
+    const angle = Math.atan2(targetY - sourceY, targetX - sourceX);
+    const centerX = (sourceX + targetX) / 2;
+    const centerY = (sourceY + targetY) / 2;
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(centerX - 10 * Math.cos(angle - Math.PI / 6), centerY - 10 * Math.sin(angle - Math.PI / 6));
     ctx.moveTo(centerX, centerY);
@@ -104,22 +135,22 @@ class EdgeVisualElement extends VisualElement {
     if (this.selected) {
       ctx.strokeStyle = "#0FF0F0";
     }
-    ctx.lineWidth = 2;
+    ctx.lineWidth = this.lineThickness;
     ctx.stroke();
   }
   overlapsMove(x, y) {
-    var fromX = this.from.x + this.from.width / 2;
-    var fromY = this.from.y + this.from.height / 2;
-    var toX = this.to.x;
-    var toY = this.to.y;
-    if (this.to instanceof StateVisualElement) {
-      toX = this.to.x + this.to.width / 2;
-      toY = this.to.y + this.to.height / 2;
+    var sourceX = this.sourceState.x + this.sourceState.width / 2;
+    var sourceY = this.sourceState.y + this.sourceState.height / 2;
+    var targetX = this.targetState.x;
+    var targetY = this.targetState.y;
+    if (this.targetState instanceof StateVisualElement) {
+      targetX = this.targetState.x + this.targetState.width / 2;
+      targetY = this.targetState.y + this.targetState.height / 2;
     }
-    var dx = toX - fromX;
-    var dy = toY - fromY;
+    var dx = targetX - sourceX;
+    var dy = targetY - sourceY;
     var length = Math.sqrt(dx * dx + dy * dy);
-    var distance = Math.abs(dy * x - dx * y + toX * fromY - toY * fromX) / length;
+    var distance = Math.abs(dy * x - dx * y + targetX * sourceY - targetY * sourceX) / length;
     return distance <= 5;
   }
   overlapsInteract(x, y) {
@@ -127,4 +158,16 @@ class EdgeVisualElement extends VisualElement {
   }
 }
 
-export { VisualElement, StateVisualElement, EdgeVisualElement };
+class TempEdgeVisualElement extends EdgeVisualElement {
+  constructor(data) {
+    super(data);
+  }
+  update(data) {
+    super.update(data);
+  }
+  updateEnd(targetCoords) {
+    this.targetState = { x: targetCoords.x, y: targetCoords.y };
+  }
+}
+
+export { VisualElement, StateVisualElement, EdgeVisualElement, TempEdgeVisualElement };

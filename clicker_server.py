@@ -1,10 +1,11 @@
-from game_capture import GameCapture
+from helpers.game_capture import GameCapture
+from helpers.game_interaction import mouse_action
+from helpers.state_tracker import StateTracker
 import time
 import cv2
 import numpy as np
 from ahk import AHK
-import mouse_inputs
-from flask import Flask, request, jsonify, Response, render_template
+from flask import Flask, Response, render_template
 from flask_socketio import SocketIO
 import json
 import base64
@@ -18,6 +19,8 @@ rect_masks = []
 saved_masks = []
 action_events = []
 offset = (0, 0)
+
+stateTracker = StateTracker()
 
 
 def get_similarity(frame1, frame2):
@@ -66,7 +69,6 @@ def get_thumbnail():
   frame = camera.get_last_frame()
   img_encoded = cv2.imencode(".png", frame.frame_buffer)[1]
   img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
-  # Resize whichever dimension is larger to 512 px
   h, w = img.shape[:2]
   if h > w:
     img = cv2.resize(img, (int(w * 256 / h), 256))
@@ -101,53 +103,20 @@ def vid():
   return Response(stream_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
+@app.route("/all_states", methods=["GET"])
+def all_states():
+  return json.dumps(stateTracker.get_all_states())
+
+
 @socket.on('mouse_event')
 def handle_action_event(data):
-  action = data.get("action")
+  return mouse_action(win, data, offset)
 
-  if action == "click":
-    xpos = int(data["xpos"])
-    ypos = int(data["ypos"])
-    pos = (xpos, ypos)
-    mouse_inputs.click_mouse(win, pos, offset)
-    response = {"status": "success"}
 
-  elif action == "drag":
-    startx = int(data["startx"])
-    starty = int(data["starty"])
-    endx = int(data["endx"])
-    endy = int(data["endy"])
-    start = (startx, starty)
-    end = (endx, endy)
-    velocity = int(data["velocity"])
-    mouse_inputs.drag_mouse(win, start, end, velocity, offset)
-    response = {"status": "success"}
-
-  elif action == "dragStart":
-    xpos = int(data["xpos"])
-    ypos = int(data["ypos"])
-    pos = (xpos, ypos)
-    mouse_inputs.drag_start(win, pos, offset)
-    response = {"status": "success"}
-
-  elif action == "dragMove":
-    xpos = int(data["xpos"])
-    ypos = int(data["ypos"])
-    pos = (xpos, ypos)
-    mouse_inputs.drag_move(win, pos, offset)
-    response = {"status": "success"}
-
-  elif action == "dragEnd":
-    xpos = int(data["xpos"])
-    ypos = int(data["ypos"])
-    pos = (xpos, ypos)
-    mouse_inputs.drag_end(win, pos, offset)
-    response = {"status": "success"}
-
-  else:
-    response = {"status": "error", "message": "Invalid action"}
-
-  socket.emit('action_response', response)
+@socket.on('state_event')
+def handle_state_event(data):
+  res = stateTracker.update(data)
+  socket.emit('state_update', res.get_data())
 
 
 @socket.on('mask_event')
@@ -181,14 +150,13 @@ def handle_mask_event(data):
   else:
     response = {"status": "error", "message": "Invalid action"}
 
-  socket.emit('mask_response', response)
+  socket.emit('mask_update', response)
 
 
 @socket.on('getFrameThumbnail')
 def handle_save_thumbnail(data):
-  if "id" not in data:
-    data["id"] = -1
-  socket.emit('frameThumbnail', {"image": get_thumbnail(), "id": data["id"]})
+  if (stateTracker.setThumbnail(data["id"], get_thumbnail())):
+    socket.emit('state_update', stateTracker.get_state(data["id"]).get_data())
 
 
 if __name__ == "__main__":
