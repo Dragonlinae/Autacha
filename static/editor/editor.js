@@ -134,8 +134,8 @@ import socket from "../managers/socketManager.js";
     socket.emit('state_event', { type: 'State', x, y });
   }
 
-  function requestAddEdge(sourceState, targetState) {
-    socket.emit('state_event', { type: 'Edge', sourceState, targetState });
+  function requestAddEdge(sourceStateId, targetStateId) {
+    socket.emit('state_event', { type: 'Edge', sourceStateId, targetStateId });
   }
 
   function requestUpdateElement(element) {

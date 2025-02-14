@@ -28,6 +28,8 @@ class StateTracker:
   def add_edge(self, data):
     edge = Edge(data)
     self.edges[edge.id] = edge
+    self.get_state(data["sourceStateId"]).outgoingEdges.append(edge.id)
+    self.get_state(data["targetStateId"]).incomingEdges.append(edge.id)
     return edge
 
   def update_edge(self, data):
@@ -35,7 +37,11 @@ class StateTracker:
     if edge is None:
       edge = self.add_edge(data)
     else:
+      self.get_state(data["sourceStateId"]).outgoingEdges.remove(edge.id)
+      self.get_state(data["targetStateId"]).incomingEdges.remove(edge.id)
       edge.update(data)
+      self.get_state(data["sourceStateId"]).outgoingEdges.append(edge.id)
+      self.get_state(data["targetStateId"]).incomingEdges.append(edge.id)
     return edge
 
   def update(self, data):

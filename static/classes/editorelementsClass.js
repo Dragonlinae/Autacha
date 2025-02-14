@@ -62,13 +62,17 @@ class StateVisualElement extends VisualElement {
       incomingEdges: []
     };
     super(Object.assign({}, defaultData, data));
+    if (data.image) {
+      var img = new Image();
+      img.src = "data:image/png;base64," + data.image;
+      this.imageElement = img;
+    }
   }
   update(data) {
     super.update(data);
     if (data.image) {
-      var base64Image = String.fromCharCode(...new Uint8Array(data.image));
       var img = new Image();
-      img.src = "data:image/png;base64," + base64Image;
+      img.src = "data:image/png;base64," + data.image;
       this.imageElement = img;
     }
   }

@@ -20,6 +20,9 @@ saved_masks = []
 action_events = []
 offset = (0, 0)
 
+stream_max_dimension = 1280
+thumbnail_max_dimension = 256
+
 stateTracker = StateTracker()
 
 
@@ -71,11 +74,13 @@ def get_thumbnail():
   img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
   h, w = img.shape[:2]
   if h > w:
-    img = cv2.resize(img, (int(w * 256 / h), 256))
+    img = cv2.resize(
+        img, (int(w * thumbnail_max_dimension / h), thumbnail_max_dimension))
   else:
-    img = cv2.resize(img, (256, int(h * 256 / w)))
+    img = cv2.resize(img, (thumbnail_max_dimension,
+                     int(h * thumbnail_max_dimension / w)))
   img_encoded = cv2.imencode(".png", img)[1]
-  stringData = base64.b64encode(img_encoded)
+  stringData = base64.b64encode(img_encoded).decode('utf-8')
   return stringData
 
 
@@ -83,14 +88,26 @@ def stream_frames():
   lastframe = None
   while True:
     frame = camera.get_last_frame()
-    if frame == lastframe:
+    if (frame == lastframe):
       time.sleep(0.01)
       continue
     lastframe = frame
+    # img = frame.frame_buffer
+    # h, w = img.shape[:2]
+    # if h > w:
+    #   img = cv2.resize(
+    #       img, (int(w * stream_max_dimension / h), stream_max_dimension))
+    # else:
+    #   img = cv2.resize(
+    #       img, (stream_max_dimension, int(h * stream_max_dimension / w)))
+    # img = cv2.imencode(".png", img)[1]
+
     img = cv2.imencode(".png", frame.frame_buffer)[1]
+
     stringData = img.tostring()
     yield (b'--frame\r\n'
            b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n')
+    # time.sleep(0.1)
 
 
 @app.route("/", methods=["GET"])

@@ -67,8 +67,8 @@ class Edge(Element):
   def __init__(self, data):
     super().__init__(data)
     self.type = "Edge"
-    self.sourceStateId = data.get("sourceState", None)
-    self.targetStateId = data.get("targetState", None)
+    self.sourceStateId = data.get("sourceStateId", None)
+    self.targetStateId = data.get("targetStateId", None)
     self.lineThickness = data.get("lineThickness", 2)
     self.name = data.get("name", "Edge " + str(self.id))
 
