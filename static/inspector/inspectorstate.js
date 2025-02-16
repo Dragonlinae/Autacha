@@ -8,4 +8,10 @@ import socket from "../managers/socketManager.js";
     console.log("Requesting frame thumbnail");
     socket.emit("getFrameThumbnail", { id: selectedElement.getSelectedElement().getId() });
   });
+
+  var testMaskButton = document.getElementById("inspector-test-mask");
+  testMaskButton.addEventListener("click", function () {
+    console.log("Requesting mask test");
+    socket.emit("setTestMaskId", { id: selectedElement.getSelectedElement().getId() });
+  });
 })();

@@ -1,4 +1,5 @@
 import socket from "../managers/socketManager.js";
+import { selectedElement } from "../managers/selectedelementManager.js";
 
 (function () {
   var regions = [];
@@ -25,26 +26,27 @@ import socket from "../managers/socketManager.js";
 
   var c = document.getElementById("video-canvas");
   var ctx = c.getContext("2d");
-  var lastX = 0;
-  var lastY = 0;
+  var initialPos = { x: 0, y: 0 };
+  var currPos = { x: 0, y: 0 };
   var isLeft = false;
   var isRight = false;
   c.addEventListener('pointerdown', e => {
-    lastX = e.offsetX;
-    lastY = e.offsetY;
+    initialPos = { x: e.offsetX, y: e.offsetY };
     switch (e.button) {
       case 0:
         isLeft = true;
-        dragStart(lastX, lastY);
+        dragStart(e.offsetX, e.offsetY);
         break;
       case 1:
         break;
       case 2:
+        isRight = true;
         break;
     }
   });
 
   c.addEventListener('pointermove', e => {
+    currPos = { x: e.offsetX, y: e.offsetY };
     if (isLeft) {
       dragMove(e.offsetX, e.offsetY);
     }
@@ -61,6 +63,11 @@ import socket from "../managers/socketManager.js";
       case 1:
         break;
       case 2:
+        isRight = false;
+        if (selectedElement.getSelectedElement()) {
+          socket.emit('mask_event', { "id": selectedElement.getSelectedElement().getId(), "x": Math.min(e.offsetX, initialPos.x), "y": Math.min(e.offsetY, initialPos.y), "width": Math.abs(e.offsetX - initialPos.x), "height": Math.abs(e.offsetY - initialPos.y) });
+        }
+
         break;
     }
   });
@@ -82,9 +89,14 @@ import socket from "../managers/socketManager.js";
   }
 
   function drawVideo() {
-    // invert the color
-
     ctx.drawImage(vid, 0, 0, c.width, c.height);
+    if (isRight) {
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 5;
+      ctx.strokeRect(Math.min(initialPos.x, currPos.x), Math.min(initialPos.y, currPos.y), Math.abs(initialPos.x - currPos.x), Math.abs(initialPos.y - currPos.y));
+    }
+
+
   }
 
   function updateCanvas() {

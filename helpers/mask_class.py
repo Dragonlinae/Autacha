@@ -8,6 +8,17 @@ class Mask:
     self.mask = mask
     self.dimensions = mask.shape[:2]
 
+  @classmethod
+  def crop_from_frame(cls, frame, mask_region):
+    print(mask_region)
+    mask_region["x"] = int(mask_region["x"])
+    mask_region["y"] = int(mask_region["y"])
+    mask_region["width"] = int(mask_region["width"])
+    mask_region["height"] = int(mask_region["height"])
+    mask = frame[mask_region["y"]:mask_region["y"] + mask_region["height"],
+                 mask_region["x"]:mask_region["x"] + mask_region["width"]]
+    return cls(mask, (mask_region["x"], mask_region["y"]))
+
   def similarity(self, frame):
     comp_area = frame[self.offset[1]:self.offset[1] + self.dimensions[0],
                       self.offset[0]:self.offset[0] + self.dimensions[1]]
@@ -16,7 +27,7 @@ class Mask:
     mse /= float(self.dimensions[0] * self.dimensions[1] * 3)
     return 1 - np.sqrt(mse) / 255.0
 
-  def overlay(self, frame, borderThickness=0, borderColor=(0, 0, 0)):
+  def overlay(self, frame, borderThickness=0, borderColor=(0, 0, 0, 0)):
     overlay = frame.copy()
     overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
             self.offset[0]:self.offset[0] + self.dimensions[1]] = cv2.addWeighted(

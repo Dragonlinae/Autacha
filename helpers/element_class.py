@@ -13,6 +13,7 @@ class elementTypes(Enum):
 
 class Element:
   id_counter = 0
+  passable_data = ["id", "type", "x", "y", "name"]
 
   def __init__(self, data):
     self.id = Element.id_counter
@@ -33,11 +34,14 @@ class Element:
     self.name = data.get("name", self.name)
 
   def get_data(self):
-    data = {key: value for key, value in self.__dict__.items()}
+    data = {key: getattr(self, key)
+            for key in Element.passable_data if hasattr(self, key)}
     return data
 
 
 class State(Element):
+  passable_data = ["width", "height", "image", "borderThickness"]
+
   def __init__(self, data):
     super().__init__(data)
     self.type = "State"
@@ -48,6 +52,7 @@ class State(Element):
     self.outgoingEdges = data.get("outgoingEdges", [])
     self.incomingEdges = data.get("incomingEdges", [])
     self.name = data.get("name", "State " + str(self.id))
+    self.mask = None
 
   def update(self, data):
     super().update(data)
@@ -75,23 +80,16 @@ class State(Element):
     elif edge_id in self.incomingEdges:
       self.incomingEdges.remove(edge_id)
 
-  # def get_data(self):
-  #   return {
-  #       "id": self.id,
-  #       "type": self.type.to_json(),
-  #       "x": self.x,
-  #       "y": self.y,
-  #       "width": self.width,
-  #       "height": self.height,
-  #       "image": self.image,
-  #       "borderThickness": self.borderThickness,
-  #       "outgoingEdges": self.outgoingEdges,
-  #       "incomingEdges": self.incomingEdges,
-  #       "name": self.name
-  #   }
+  def get_data(self):
+    data = super().get_data()
+    data.update({key: getattr(self, key)
+                for key in State.passable_data if hasattr(self, key)})
+    return data
 
 
 class Edge(Element):
+  passable_data = ["sourceStateId", "targetStateId", "lineThickness"]
+
   def __init__(self, data):
     super().__init__(data)
     self.type = "Edge"
@@ -106,14 +104,8 @@ class Edge(Element):
   def safe_update(self, data):
     super().safe_update(data)
 
-  # def get_data(self):
-  #   return {
-  #       "id": self.id,
-  #       "type": self.type.to_json(),
-  #       "x": self.x,
-  #       "y": self.y,
-  #       "sourceState": self.sourceState,
-  #       "targetState": self.targetState,
-  #       "lineThickness": self.lineThickness,
-  #       "name": self.name
-  #   }
+  def get_data(self):
+    data = super().get_data()
+    data.update({key: getattr(self, key)
+                for key in Edge.passable_data if hasattr(self, key)})
+    return data

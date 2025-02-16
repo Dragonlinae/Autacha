@@ -1,6 +1,7 @@
 from helpers.game_capture import GameCapture
 from helpers.game_interaction import mouse_action
 from helpers.state_tracker import StateTracker
+from helpers.mask_class import Mask
 import time
 import cv2
 import numpy as np
@@ -70,7 +71,7 @@ socket = SocketIO(app)
 
 def get_thumbnail():
   frame = camera.get_last_frame()
-  img_encoded = cv2.imencode(".png", frame.frame_buffer)[1]
+  img_encoded = cv2.imencode(".jpg", frame.frame_buffer)[1]
   img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
   h, w = img.shape[:2]
   if h > w:
@@ -79,19 +80,19 @@ def get_thumbnail():
   else:
     img = cv2.resize(img, (thumbnail_max_dimension,
                      int(h * thumbnail_max_dimension / w)))
-  img_encoded = cv2.imencode(".png", img)[1]
+  img_encoded = cv2.imencode(".jpg", img)[1]
   stringData = base64.b64encode(img_encoded).decode('utf-8')
   return stringData
 
 
 def stream_frames():
-  lastframe = None
+  frame_number = -1
+  frame = camera.get_frame_ref()
   while True:
-    frame = camera.get_last_frame()
-    if (frame == lastframe):
+    if (frame_number == camera.frame_number):
       time.sleep(0.01)
       continue
-    lastframe = frame
+    frame_number = camera.frame_number
     # img = frame.frame_buffer
     # h, w = img.shape[:2]
     # if h > w:
@@ -102,7 +103,16 @@ def stream_frames():
     #       img, (stream_max_dimension, int(h * stream_max_dimension / w)))
     # img = cv2.imencode(".png", img)[1]
 
-    img = cv2.imencode(".png", frame.frame_buffer)[1]
+    img = frame.frame_buffer
+    mask = stateTracker.get_testing_mask()
+    if mask is not None:
+      similarity_score = mask.similarity(img)
+      if similarity_score > 0.9:
+        img = mask.overlay(img, 5, (0, 255, 0))
+      else:
+        img = mask.overlay(img, 5, (0, 0, 255))
+
+    img = cv2.imencode(".jpg", img)[1]
 
     stringData = img.tostring()
     yield (b'--frame\r\n'
@@ -142,36 +152,13 @@ def handle_state_event(data):
 
 @socket.on('mask_event')
 def handle_mask_event(data):
-  action = data.get("action")
+  stateTracker.apply_mask(data["id"], Mask.crop_from_frame(
+      camera.get_last_frame().frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}))
 
-  if action == "rect":
-    xpos = int(data["xpos"])
-    ypos = int(data["ypos"])
-    width = int(data["width"])
-    height = int(data["height"])
-    rect_masks.append((xpos, ypos, width, height))
-    response = {"status": "success"}
 
-  elif action == "save":
-    saved_masks.extend(rect_masks)
-    rect_masks.clear()
-    response = {"status": "success"}
-
-  elif action == "clear":
-    rect_masks.clear()
-    response = {"status": "success"}
-
-  elif action == "apply":
-    saved_mask = np.zeros((frame.height, frame.width), np.uint8)
-    for mask in saved_masks:
-      xpos, ypos, width, height = mask
-      saved_mask[ypos:ypos+height, xpos:xpos+width] = 1
-    response = {"status": "success"}
-
-  else:
-    response = {"status": "error", "message": "Invalid action"}
-
-  socket.emit('mask_update', response)
+@socket.on('setTestMaskId')
+def handle_test_mask_event(data):
+  stateTracker.set_testing_id(data["id"])
 
 
 @socket.on('getFrameThumbnail')

@@ -5,6 +5,7 @@ class StateTracker:
   def __init__(self):
     self.states = {}
     self.edges = {}
+    self.testing_id = -1
 
   def get_state(self, id):
     return self.states.get(id, None)
@@ -16,6 +17,8 @@ class StateTracker:
 
   def remove_state(self, id):
     state = self.states.pop(id)
+    if self.testing_id == id:
+      self.testing_id = -1
     for edge_id in state.incomingEdges:
       removed_edge = self.edges.pop(edge_id)
       self.get_state(removed_edge.sourceStateId).remove_outgoing_edge(edge_id)
@@ -49,6 +52,8 @@ class StateTracker:
 
   def remove_edge(self, id):
     edge = self.edges.pop(id)
+    if self.testing_id == id:
+      self.testing_id = -1
     self.get_state(edge.sourceStateId).remove_outgoing_edge(id)
     self.get_state(edge.targetStateId).remove_incoming_edge(id)
     return edge
@@ -108,5 +113,19 @@ class StateTracker:
     state = self.get_state(id)
     if state is not None:
       state.mask = mask
+      self.testing_id = id
       return True
     return False
+
+  def get_testing_mask(self):
+    if self.testing_id == -1:
+      return None
+    return self.get_state(self.testing_id).mask
+
+  def set_testing_id(self, id):
+    if id in self.states or id in self.edges:
+      self.testing_id = id
+      return True
+    else:
+      self.testing_id = -1
+      return False
