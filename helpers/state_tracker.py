@@ -1,4 +1,4 @@
-from helpers.GraphElementClass import State, Edge
+from helpers.element_class import State, Edge
 
 
 class StateTracker:
@@ -101,5 +101,12 @@ class StateTracker:
     state = self.get_state(id)
     if state is not None:
       state.image = thumbnail
+      return True
+    return False
+
+  def apply_mask(self, id, mask):
+    state = self.get_state(id)
+    if state is not None:
+      state.mask = mask
       return True
     return False
