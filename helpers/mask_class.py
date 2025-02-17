@@ -15,6 +15,8 @@ class Mask:
     mask_region["y"] = int(mask_region["y"])
     mask_region["width"] = int(mask_region["width"])
     mask_region["height"] = int(mask_region["height"])
+    if mask_region["width"] == 0 or mask_region["height"] == 0:
+      return None
     mask = frame[mask_region["y"]:mask_region["y"] + mask_region["height"],
                  mask_region["x"]:mask_region["x"] + mask_region["width"]]
     return cls(mask, (mask_region["x"], mask_region["y"]))

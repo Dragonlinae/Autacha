@@ -21,6 +21,7 @@ body {
 
 .column1 {
   width: var(--splitter1-pos);
+  overflow: hidden;
 }
 
 #splitter1 {
@@ -40,5 +41,5 @@ body {
 }
 
 .column3 {
-  width: calc(100% - var(--splitter2-pos) - 5px);
+  width: calc(100vw - var(--splitter2-pos) - 5px);
 }

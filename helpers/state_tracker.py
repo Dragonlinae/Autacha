@@ -102,16 +102,17 @@ class StateTracker:
         "edges": [edge.get_data() for edge in self.edges.values()]
     }
 
-  def setThumbnail(self, id, thumbnail):
+  def setImage(self, id, frame):
     state = self.get_state(id)
     if state is not None:
-      state.image = thumbnail
+      state.frame = frame
+      state.image = "/elementimg?id=" + str(state.id)
       return True
     return False
 
   def apply_mask(self, id, mask):
     state = self.get_state(id)
-    if state is not None:
+    if state is not None and mask is not None:
       state.mask = mask
       self.testing_id = id
       return True

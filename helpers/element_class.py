@@ -47,6 +47,7 @@ class State(Element):
     self.type = "State"
     self.width = data.get("width", 100)
     self.height = data.get("height", 50)
+    self.frame = data.get("frame", None)
     self.image = data.get("image", None)
     self.borderThickness = data.get("borderThickness", 10)
     self.outgoingEdges = data.get("outgoingEdges", [])

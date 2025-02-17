@@ -62,16 +62,23 @@ class StateVisualElement extends VisualElement {
     super(Object.assign({}, defaultData, data));
     if (data.image) {
       var img = new Image();
-      img.src = "data:image/png;base64," + data.image;
-      this.imageElement = img;
+      img.onload = () => {
+        this.imageElement = img;
+      };
+      img.src = data.image + "&" + new Date().getTime();
     }
   }
   update(data) {
     super.update(data);
     if (data.image) {
       var img = new Image();
-      img.src = "data:image/png;base64," + data.image;
-      this.imageElement = img;
+      img.onload = () => {
+        this.imageElement = img;
+        document.getElementById("inspector-state").update();
+      };
+      img.src = data.image + "&" + new Date().getTime();
+    } else {
+      document.getElementById("inspector-state").update();
     }
   }
   draw(ctx) {
@@ -119,7 +126,10 @@ class EdgeVisualElement extends VisualElement {
     var offsetY = -offset * dx / length;
     return { x: offsetX, y: offsetY };
   }
-
+  update(data) {
+    super.update(data);
+    document.getElementById("inspector-edge").update();
+  }
   draw(ctx) {
     var sourceX = this.sourceState.x + this.sourceState.width / 2;
     var sourceY = this.sourceState.y + this.sourceState.height / 2;
@@ -171,11 +181,15 @@ class EdgeVisualElement extends VisualElement {
     targetX += offset.x;
     targetY += offset.y;
 
+    var leniency = 5;
+
     var dx = targetX - sourceX;
     var dy = targetY - sourceY;
     var length = Math.sqrt(dx * dx + dy * dy);
     var distance = Math.abs(dy * x - dx * y + targetX * sourceY - targetY * sourceX) / length;
-    return distance <= 5;
+
+    var withinBoundingBox = x >= Math.min(sourceX, targetX) - leniency && x <= Math.max(sourceX, targetX) + leniency && y >= Math.min(sourceY, targetY) - leniency && y <= Math.max(sourceY, targetY) + leniency
+    return distance <= leniency && withinBoundingBox;
   }
   overlapsInteract(x, y) {
     return false;

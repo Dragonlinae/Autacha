@@ -1,0 +1,19 @@
+#inspector {
+  width: auto;
+  height: 100%;
+  display: block;
+  background-color: #b6b6b6;
+  padding: 10px;
+}
+
+#inspector-state {
+  width: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #b6b6b6;
+}
+
+[hidden] {
+  display: none !important;
+}

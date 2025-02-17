@@ -12,6 +12,7 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
     if (selectedElement.getSelectedElement()) {
       if (selectedElement.getSelectedElement() instanceof StateVisualElement) {
         insState.hidden = false;
+        insState.update();
         insEdge.hidden = true;
       } else if (selectedElement.getSelectedElement() instanceof EdgeVisualElement) {
         insState.hidden = true;

@@ -1,8 +1,10 @@
 {% if head %}
+<link rel="stylesheet" href="/inspector/inspector.css">
 {% endif %}
 
 {% if body %}
-<div class="inspector-div">
+<div id="inspector">
+  <h2>Inspector</h2>
   <div id="inspector-state" hidden>
     {% include "inspectorstate.html" %}
   </div>

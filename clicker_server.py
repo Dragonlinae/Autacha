@@ -6,7 +6,7 @@ import time
 import cv2
 import numpy as np
 from ahk import AHK
-from flask import Flask, Response, render_template
+from flask import Flask, Response, render_template, request
 from flask_socketio import SocketIO
 import json
 import base64
@@ -72,15 +72,15 @@ socket = SocketIO(app)
 def get_thumbnail():
   frame = camera.get_last_frame()
   img_encoded = cv2.imencode(".jpg", frame.frame_buffer)[1]
-  img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
-  h, w = img.shape[:2]
-  if h > w:
-    img = cv2.resize(
-        img, (int(w * thumbnail_max_dimension / h), thumbnail_max_dimension))
-  else:
-    img = cv2.resize(img, (thumbnail_max_dimension,
-                     int(h * thumbnail_max_dimension / w)))
-  img_encoded = cv2.imencode(".jpg", img)[1]
+  # img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
+  # h, w = img.shape[:2]
+  # if h > w:
+  #   img = cv2.resize(
+  #       img, (int(w * thumbnail_max_dimension / h), thumbnail_max_dimension))
+  # else:
+  #   img = cv2.resize(img, (thumbnail_max_dimension,
+  #                    int(h * thumbnail_max_dimension / w)))
+  # img_encoded = cv2.imencode(".jpg", img)[1]
   stringData = base64.b64encode(img_encoded).decode('utf-8')
   return stringData
 
@@ -114,7 +114,7 @@ def stream_frames():
 
     img = cv2.imencode(".jpg", img)[1]
 
-    stringData = img.tostring()
+    stringData = img.tobytes()
     yield (b'--frame\r\n'
            b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n')
     # time.sleep(0.1)
@@ -135,6 +135,21 @@ def all_states():
   return json.dumps(stateTracker.get_all_states())
 
 
+@app.route("/elementimg", methods=["GET"])
+def elementimg():
+  id = int(request.args.get("id"))
+  overlay = request.args.get("overlay", "false")
+  state = stateTracker.get_state(id)
+  if state is not None and state.frame is not None:
+    img = state.frame.frame_buffer
+    mask = state.mask
+    if mask is not None and overlay == "true":
+      img = mask.overlay(img, 5, (0, 255, 0))
+    img = cv2.imencode(".jpg", img)[1]
+    return Response(img.tobytes(), mimetype='image/jpeg')
+  return ""
+
+
 @socket.on('mouse_event')
 def handle_action_event(data):
   return mouse_action(win, data, offset)
@@ -152,8 +167,15 @@ def handle_state_event(data):
 
 @socket.on('mask_event')
 def handle_mask_event(data):
-  stateTracker.apply_mask(data["id"], Mask.crop_from_frame(
-      camera.get_last_frame().frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}))
+  state = stateTracker.get_state(data["id"])
+  if state is not None:
+    if (data["action"] == "set"):
+      handle_update_Frame(data)
+      stateTracker.apply_mask(data["id"], Mask.crop_from_frame(
+          state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}))
+    elif (data["action"] == "clear"):
+      state.mask = None
+    socket.emit('state_update', state.get_data())
 
 
 @socket.on('setTestMaskId')
@@ -161,9 +183,15 @@ def handle_test_mask_event(data):
   stateTracker.set_testing_id(data["id"])
 
 
-@socket.on('getFrameThumbnail')
-def handle_save_thumbnail(data):
-  if (stateTracker.setThumbnail(data["id"], get_thumbnail())):
+@socket.on('updateFrame')
+def handle_update_Frame(data):
+  state = stateTracker.get_state(data["id"])
+  if (state):
+    stateTracker.setImage(data["id"], camera.get_last_frame())
+    if (state.mask is not None):
+      state.mask = Mask.crop_from_frame(
+          state.frame.frame_buffer, {"x": state.mask.offset[0], "y": state.mask.offset[1],
+                                     "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]})
     socket.emit('state_update', stateTracker.get_state(data["id"]).get_data())
 
 

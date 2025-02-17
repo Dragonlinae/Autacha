@@ -65,7 +65,7 @@ import { selectedElement } from "../managers/selectedelementManager.js";
       case 2:
         isRight = false;
         if (selectedElement.getSelectedElement()) {
-          socket.emit('mask_event', { "id": selectedElement.getSelectedElement().getId(), "x": Math.min(e.offsetX, initialPos.x), "y": Math.min(e.offsetY, initialPos.y), "width": Math.abs(e.offsetX - initialPos.x), "height": Math.abs(e.offsetY - initialPos.y) });
+          socket.emit('mask_event', { "id": selectedElement.getSelectedElement().getId(), "action": "set", "x": Math.min(e.offsetX, initialPos.x), "y": Math.min(e.offsetY, initialPos.y), "width": Math.abs(e.offsetX - initialPos.x), "height": Math.abs(e.offsetY - initialPos.y) });
         }
 
         break;
