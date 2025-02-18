@@ -51,7 +51,6 @@ import socket from "../managers/socketManager.js";
         break;
       case 2:
         isPanning = true;
-        selectedElement.deselectElement();
         break;
     }
   });
@@ -62,7 +61,7 @@ import socket from "../managers/socketManager.js";
       canvasTransform.y += e.movementY;
     }
     if (isDragging) {
-      selectedElement.getSelectedElement().moveTo(transformCoordinates(e.offsetX, e.offsetY).x - dragOffset.x, transformCoordinates(e.offsetX, e.offsetY).y - dragOffset.y);
+      selectedElement.getSelectedElement().moveTo((e.offsetX - canvasTransform.x) / canvasTransform.scale - dragOffset.x, (e.offsetY - canvasTransform.y) / canvasTransform.scale - dragOffset.y);
     }
     if (isDrawingEdge) {
       elementManager.updateTempEdge(transformCoordinates(e.offsetX, e.offsetY));
@@ -104,7 +103,7 @@ import socket from "../managers/socketManager.js";
   c.addEventListener('contextmenu', e => e.preventDefault());
 
   c.addEventListener('keydown', e => {
-    if (e.key === "Delete" && selectedElement.getSelectedElement() !== null) {
+    if (e.key === "Delete") {
       requestDeleteElement(selectedElement.getSelectedElement().getId());
     }
   });
@@ -135,8 +134,8 @@ import socket from "../managers/socketManager.js";
     socket.emit('state_event', { type: 'State', x, y });
   }
 
-  function requestAddEdge(sourceStateId, targetStateId) {
-    socket.emit('state_event', { type: 'Edge', sourceStateId, targetStateId });
+  function requestAddEdge(sourceState, targetState) {
+    socket.emit('state_event', { type: 'Edge', sourceState, targetState });
   }
 
   function requestUpdateElement(element) {

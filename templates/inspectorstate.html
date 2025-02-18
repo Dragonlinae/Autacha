@@ -6,8 +6,10 @@
 <button id="inspector-update-frame">Update Frame</button>
 <button id="inspector-clear-mask">Clear Mask</button>
 <button id="inspector-test-mask">Test Mask</button>
+{% include "inspectoractionlist.html" %}
 {% endif %}
 
 {% if scripts %}
 <script src="/inspector/inspectorstate.js" type="module"></script>
+{% include "inspectoractionlist.html" %}
 {% endif %}

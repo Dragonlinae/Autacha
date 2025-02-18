@@ -42,7 +42,7 @@ title = "Arknights"
 ahk = AHK()
 ahk.run_script(
     f"Run, {target},,hide")
-win = ahk.win_wait(title=title, timeout=30)
+win = ahk.win_wait(title=title, timeout=5)
 time.sleep(1)
 win.to_bottom()
 print(win)

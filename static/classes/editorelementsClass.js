@@ -7,7 +7,8 @@ class VisualElement {
       y: 0,
       selected: false,
       playing: false,
-      name: "Element"
+      name: "Element",
+      actions: [],
     };
     Object.assign(this, defaultData, data);
   }
@@ -114,7 +115,8 @@ class EdgeVisualElement extends VisualElement {
       sourceState: null,
       targetState: null,
       lineThickness: 2,
-      name: "Edge"
+      name: "Edge",
+      repeats: -1,
     };
     super(Object.assign({}, defaultData, data));
   }

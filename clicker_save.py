@@ -37,22 +37,22 @@ def log_mouse(event, x, y, flags, param, camera, win):
     if not mouse_down_pos:
       return
 
-    action = mouse_inputs.MouseInputTypes.CLICK if (
-        x, y) == mouse_down_pos else mouse_inputs.MouseInputTypes.DRAG
+    action = "click" if (
+        x, y) == mouse_down_pos else "drag"
 
-    if action == mouse_inputs.MouseInputTypes.CLICK:
-      mouse_inputs.exec_mouse(win, {"type": mouse_inputs.MouseInputTypes.CLICK, "pos": (
+    if action == "click":
+      mouse_inputs.exec_mouse(win, {"type": "click", "pos": (
           x, y), "offset": offset, "repeat": 1})
-    elif action == mouse_inputs.MouseInputTypes.DRAG:
-      mouse_inputs.exec_mouse(win, {"type": mouse_inputs.MouseInputTypes.DRAG, "start": mouse_down_pos, "end": (
+    elif action == "drag":
+      mouse_inputs.exec_mouse(win, {"type": "drag", "start": mouse_down_pos, "end": (
           x, y), "velocity": 10, "offset": offset, "repeat": 1})
 
     if rect_mask:
-      if action == mouse_inputs.MouseInputTypes.CLICK:
+      if action == "click":
         action_events.append(
-            {"type": mouse_inputs.MouseInputTypes.CLICK, "pos": (x, y), "offset": offset, "repeat": 1})
-      elif action == mouse_inputs.MouseInputTypes.DRAG:
-        action_events.append({"type": mouse_inputs.MouseInputTypes.DRAG, "start": mouse_down_pos, "end": (
+            {"type": "click", "pos": (x, y), "offset": offset, "repeat": 1})
+      elif action == "drag":
+        action_events.append({"type": "drag", "start": mouse_down_pos, "end": (
             x, y), "velocity": 10, "offset": offset, "repeat": 1})
       rect_masks.append(rect_mask)
       saved_masks.append(saved_mask)

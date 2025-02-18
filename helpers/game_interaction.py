@@ -26,7 +26,7 @@ def mouse_action(win, data, offset):
       xpos = int(data["xpos"])
       ypos = int(data["ypos"])
       pos = (xpos, ypos)
-      mouse_inputs.drag_start(win, pos, offset)
+      mouse_inputs.mouse_down(win, pos, offset)
       return {"status": "success"}
 
     case "dragMove":
@@ -40,7 +40,7 @@ def mouse_action(win, data, offset):
       xpos = int(data["xpos"])
       ypos = int(data["ypos"])
       pos = (xpos, ypos)
-      mouse_inputs.drag_end(win, pos, offset)
+      mouse_inputs.mouse_up(win, pos, offset)
       return {"status": "success"}
 
     case _:

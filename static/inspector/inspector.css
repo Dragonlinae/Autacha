@@ -4,6 +4,8 @@
   display: block;
   background-color: #b6b6b6;
   padding: 10px;
+  overflow-y: scroll;
+  scrollbar-width: none;
 }
 
 #inspector-state {
@@ -12,6 +14,11 @@
   display: flex;
   flex-direction: column;
   background-color: #b6b6b6;
+}
+
+#inspector-action-list .dragger {
+  height: 1rem;
+  vertical-align: middle;
 }
 
 [hidden] {

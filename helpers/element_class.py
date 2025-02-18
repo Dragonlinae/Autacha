@@ -13,7 +13,7 @@ class elementTypes(Enum):
 
 class Element:
   id_counter = 0
-  passable_data = ["id", "type", "x", "y", "name"]
+  passable_data = ["id", "type", "x", "y", "name", "actions"]
 
   def __init__(self, data):
     self.id = Element.id_counter
@@ -21,6 +21,7 @@ class Element:
     self.x = data.get("x", 0)
     self.y = data.get("y", 0)
     self.name = data.get("name", "Element " + str(self.id))
+    self.actions = data.get("actions", [])
     Element.id_counter += 1
 
   def update(self, data):
@@ -89,7 +90,8 @@ class State(Element):
 
 
 class Edge(Element):
-  passable_data = ["sourceStateId", "targetStateId", "lineThickness"]
+  passable_data = ["sourceStateId",
+                   "targetStateId", "lineThickness", "repeats"]
 
   def __init__(self, data):
     super().__init__(data)
@@ -98,6 +100,7 @@ class Edge(Element):
     self.targetStateId = data.get("targetStateId", None)
     self.lineThickness = data.get("lineThickness", 2)
     self.name = data.get("name", "Edge " + str(self.id))
+    self.repeats = data.get("repeats", -1)
 
   def update(self, data):
     super().update(data)
