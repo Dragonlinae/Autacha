@@ -1,13 +1,11 @@
-*
-!.gitignore
-!*/
 .venv
+.vscode
 
-!*.py
+__pycache__
 
-!*.html
-!*.css
-!*.js
+*.png
+*.whl
+*.npy
 
-!*.ico
-!*.txt
+!tessdata/
+tessdata/*

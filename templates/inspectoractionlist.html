@@ -4,25 +4,81 @@
 {% if body %}
 <div id="inspector-action-list">
   <button id="add-action">Add Action</button>
+  <button id="save-action">Save Actions</button>
   <ul id="action-list">
-    <template id="action-template">
-      <li class="action-item">
-        <svg class="dragger" fill="#000000" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
-          <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
-          <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
-          <g id="SVGRepo_iconCarrier">
-            <path
-              d="M600 1440c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240Zm720 0c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240ZM600 720c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240Zm720 0c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240ZM600 0c132.36 0 240 107.64 240 240S732.36 480 600 480 360 372.36 360 240 467.64 0 600 0Zm720 0c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240S1187.64 0 1320 0Z"
-              fill-rule="evenodd"></path>
-          </g>
-        </svg>
-        <span class="action-type">{{ action_type }}</span>
-        <span class="action-params">{{ action_params }}</span>
-        <button class="delete-action">Delete</button>
-      </li>
-    </template>
   </ul>
 </div>
+
+<template id="action-template">
+  <li class="action-item">
+    <div class="dragger">
+      <svg fill="#000000" viewBox="0 0 1920 1920" xmlns="http://www.w3.org/2000/svg">
+        <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+        <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+        <g id="SVGRepo_iconCarrier">
+          <path
+            d="M600 1440c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240Zm720 0c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240ZM600 720c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240Zm720 0c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240 107.64-240 240-240ZM600 0c132.36 0 240 107.64 240 240S732.36 480 600 480 360 372.36 360 240 467.64 0 600 0Zm720 0c132.36 0 240 107.64 240 240s-107.64 240-240 240-240-107.64-240-240S1187.64 0 1320 0Z"
+            fill-rule="evenodd"></path>
+        </g>
+      </svg>
+    </div>
+    <div class="action-item-content">
+      <span class="action-type"></span>
+      <span class="action-params"></span>
+    </div>
+    <button class="delete-action">Delete</button>
+  </li>
+</template>
+
+<template id="action-click-params-template">
+  <label>X:
+    <input type="number" name="click-x" value="0" min="0" max="1920" step="1">
+  </label>
+  <label>Y:
+    <input type="number" name="click-y" value="0" min="0" max="1080" step="1">
+  </label>
+  <button class="record-click">Record Click</button>
+  <button class="simulate-click">Simulate Click</button>
+</template>
+
+<template id="action-drag-params-template">
+  <label>X:
+    <input type="number" name="drag-x" value="0" min="0" max="1920" step="1">
+  </label>
+  <label>Y:
+    <input type="number" name="drag-y" value="0" min="0" max="1080" step="1">
+  </label>
+  <button class="record-drag">Record Drag</button>
+  <button class="simulate-drag">Simulate Drag</button>
+</template>
+
+<template id="action-cont-drag-params-template">
+  <canvas id="cont-drag-canvas" width="50" height="50"></canvas>
+  <button class="record-cont-drag">Record Continuous Drag</button>
+  <button class="simulate-cont-drag">Simulate Continuous Drag</button>
+</template>
+
+<template id="action-key-params-template">
+  <label>Key:
+    <input type="text" name="key-code" value="{ENTER}">
+  </label>
+  <label>Type:
+    <select name="press-type">
+      <option value="press">Press</option>
+      <option value="down">Down</option>
+      <option value="up">Up</option>
+    </select>
+  </label>
+  <button class="record-key">Record Key</button>
+  <button class="simulate-key">Simulate Key</button>
+</template>
+
+<template id="action-wait-params-template">
+  <label>Time (ms):
+    <input type="number" name="wait-time" value="0" min="0" step="1">
+  </label>
+</template>
+
 {% endif %}
 
 {% if scripts %}

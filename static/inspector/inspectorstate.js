@@ -18,6 +18,26 @@ import socket from "../managers/socketManager.js";
     socket.emit("setTestMaskId", { id: selectedElement.getSelectedElement().getId() });
   });
 
+  var maskTypeSelector = document.getElementById("inspector-mask-type");
+  var maskTypeSimilarity = document.getElementById("inspector-mask-similarity");
+  var maskTypeOCR = document.getElementById("inspector-mask-ocr");
+  maskTypeSelector.addEventListener("change", function () {
+    if (maskTypeSelector.value === "similarity") {
+      maskTypeSimilarity.hidden = false;
+      maskTypeOCR.hidden = true;
+    } else if (maskTypeSelector.value === "ocr") {
+      maskTypeSimilarity.hidden = true;
+      maskTypeOCR.hidden = false;
+    }
+  });
+
+  var maskSlider = document.getElementById("inspector-mask-similarity-slider");
+  var maskSliderValue = document.getElementById("inspector-mask-similarity-value");
+  maskSlider.addEventListener("input", function () {
+    maskSliderValue.textContent = maskSlider.value;
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set", value: maskSlider.value });
+  });
+
   var inspectorStateDiv = document.getElementById("inspector-state");
   var frameImg = document.getElementById("inspector-frame");
   inspectorStateDiv.update = function () {

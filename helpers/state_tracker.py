@@ -60,6 +60,7 @@ class StateTracker:
 
   def update_edge(self, data):
     edge = None
+    print(data)
     if self.get_state(data["sourceStateId"]) is None or self.get_state(data["targetStateId"]) is None or data["sourceStateId"] == data["targetStateId"]:
       data["type"] = "Delete"
       return data

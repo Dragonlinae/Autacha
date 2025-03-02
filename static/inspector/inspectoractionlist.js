@@ -12,11 +12,19 @@
   var actionList = document.getElementById("action-list");
   var elementTemplate = document.getElementById("action-template");
   var addActionButton = document.getElementById("add-action");
+  var saveActionButton = document.getElementById("save-action");
+
+  var paramTemplates = {
+    "click": document.getElementById("action-click-params-template"),
+    "drag": document.getElementById("action-drag-params-template"),
+    "cont-drag": document.getElementById("action-cont-drag-params-template"),
+    "key": document.getElementById("action-key-params-template"),
+    "wait": document.getElementById("action-wait-params-template"),
+  };
 
   addActionButton.addEventListener("click", function () {
     var action = {
-      type: "test " + Math.floor(Math.random() * 100),
-      params: "test"
+      type: Object.keys(paramTemplates)[Math.floor(Math.random() * Object.keys(paramTemplates).length)]
     };
     var element = createActionElement(action)
     actionList.appendChild(element);
@@ -24,10 +32,20 @@
     console.log(element);
   });
 
+  saveActionButton.addEventListener("click", function () {
+    var actions = [];
+    var actionElements = actionList.children;
+    for (var i = 0; i < actionElements.length; i++) {
+      actions.push(actionElements[i].toActionSave());
+    }
+    console.log(actions);
+  });
+
   function createActionElement(action) {
     var element = elementTemplate.content.cloneNode(true).children[0];
+    element.actionType = action.type;
     element.querySelector(".action-type").textContent = action.type;
-    element.querySelector(".action-params").textContent = action.params;
+    element.querySelector(".action-params").append(paramTemplates[action.type].content.cloneNode(true));
     element.querySelector(".delete-action").addEventListener("click", function () {
       element.remove();
     });
@@ -35,11 +53,19 @@
       actionListReorder(e, element);
     }
     );
+    element.toActionSave = function () {
+      var actionSave = { type: element.actionType };
+      var labels = element.querySelector(".action-params").querySelectorAll("label");
+      for (var i = 0; i < labels.length; i++) {
+        console.log(labels[i]);
+        var input = labels[i].querySelector("input") || labels[i].querySelector("select");
+        console.log(input);
+        actionSave[input.name] = input.value;
+      }
+      return actionSave;
+    }
     console.log(element);
     return element;
-  }
-
-  function updateActionList() {
   }
 
   function actionListReorder(e, element) {
@@ -57,6 +83,7 @@
     element.style.left = element.getBoundingClientRect().left + "px";
     element.style.position = "absolute";
     element.style.transition = "";
+    element.style.pointerEvents = "none";
     actionList.insertBefore(placeholder, element);
     document.addEventListener("mousemove", function (e) {
       if (isDragging) {
@@ -75,7 +102,7 @@
           setTimeout(() => {
             beforeElement.style.transition = "translate 0.2s";
             beforeElement.style.translate = "0px 0px";
-          }, 1);
+          }, 10);
         } else if (afterElement && e.clientY > afterElement.getBoundingClientRect().top + afterElement.getBoundingClientRect().height / 2) {
           var prevposition = afterElement.getBoundingClientRect().top;
           actionList.insertBefore(afterElement, placeholder);
@@ -85,7 +112,7 @@
           setTimeout(() => {
             afterElement.style.transition = "translate 0.2s";
             afterElement.style.translate = "0px 0px";
-          }, 1);
+          }, 10);
         }
       }
     });
@@ -95,6 +122,7 @@
       element.style.top = "auto";
       element.style.left = "auto";
       element.style.position = "static";
+      element.style.pointerEvents = "auto";
       placeholder.remove();
     });
   }

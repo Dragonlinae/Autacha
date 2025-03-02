@@ -6,6 +6,36 @@
 <button id="inspector-update-frame">Update Frame</button>
 <button id="inspector-clear-mask">Clear Mask</button>
 <button id="inspector-test-mask">Test Mask</button>
+<select id="inspector-mask-type">
+  <option value="similarity" selected>Similarity</option>
+  <option value="ocr">OCR</option>
+</select>
+<div id="inspector-mask-similarity">
+  <label for="inspector-mask-similarity-slider">Mask Similarity Threshold</label>
+  <input id="inspector-mask-similarity-slider" type="range" min="0" max="1" step="0.01" value="0.9" list="tickmarks">
+  <span id="inspector-mask-similarity-value">0.9</span>
+</div>
+<div id="inspector-mask-ocr" hidden>
+  <label for="inspector-mask-ocr-slider">Mask OCR Confidence Thershold</label>
+  <input id="inspector-mask-ocr-slider" type="range" min="0" max="1" step="0.01" value="0.9" list="tickmarks">
+  <span id="inspector-mask-ocr-value">0.9</span>
+  <div id="inspector-mask-ocr-condition-container">
+    <select id="inspector-mask-ocr-typecast">
+      <option value="string">String</option>
+      <option value="number">Number</option>
+    </select>
+    <select id="inspector-mask-ocr-condition">
+      <option value="equals">Equals</option>
+      <option value="contains">Contains</option>
+      <option value="greater">Greater Than</option>
+      <option value="less">Less Than</option>
+      <option value="matches">Matches Regex</option>
+    </select>
+    <input id="inspector-mask-ocr-condition-value" type="text" placeholder="Condition Value">
+  </div>
+</div>
+
+<textarea id="custom-condition" placeholder="Additional Custom Condition" rows="1"></textarea>
 {% include "inspectoractionlist.html" %}
 {% endif %}
 

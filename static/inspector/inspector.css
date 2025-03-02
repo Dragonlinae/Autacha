@@ -17,8 +17,39 @@
 }
 
 #inspector-action-list .dragger {
-  height: 1rem;
+  width: 20px;
+  min-width: 20px;
   vertical-align: middle;
+  padding-right: 10px;
+}
+
+#inspector-action-list .dragger::after {
+  content: "";
+  display: block;
+  position: absolute;
+  height: 100%;
+  width: 30px;
+  top: 0;
+  left: 0;
+}
+
+#action-list {
+  padding: 0;
+}
+
+#action-list .action-item {
+  display: flex;
+  min-height: 2rem;
+  align-items: center;
+  position: relative;
+}
+
+#action-list .action-item-content {
+  margin-block: 0.5rem;
+}
+
+#action-list .delete-action {
+  margin-left: auto;
 }
 
 [hidden] {
