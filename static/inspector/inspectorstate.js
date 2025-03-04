@@ -5,7 +5,9 @@ import socket from "../managers/socketManager.js";
 (function () {
   var frameButton = document.getElementById("inspector-update-frame");
   frameButton.addEventListener("click", function () {
-    socket.emit("updateFrame", { id: selectedElement.getSelectedElement().getId() });
+    socket.emit("mask_event", {
+      id: selectedElement.getSelectedElement().getId(), action: "update_frame"
+    });
   });
 
   var clearMaskButton = document.getElementById("inspector-clear-mask");
@@ -35,7 +37,7 @@ import socket from "../managers/socketManager.js";
   var maskSliderValue = document.getElementById("inspector-mask-similarity-value");
   maskSlider.addEventListener("input", function () {
     maskSliderValue.textContent = maskSlider.value;
-    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set", value: maskSlider.value });
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_similarity", value: maskSlider.value });
   });
 
   var inspectorStateDiv = document.getElementById("inspector-state");

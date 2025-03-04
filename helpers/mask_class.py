@@ -7,6 +7,8 @@ class Mask:
     self.offset = offset
     self.mask = mask
     self.dimensions = mask.shape[:2]
+    self.detection_type = "similarity"
+    self.similarity_threshold = 0.9
 
   @classmethod
   def crop_from_frame(cls, frame, mask_region):

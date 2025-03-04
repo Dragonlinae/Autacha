@@ -107,7 +107,7 @@ def stream_frames():
     mask = stateTracker.get_testing_mask()
     if mask is not None:
       similarity_score = mask.similarity(img)
-      if similarity_score > 0.9:
+      if similarity_score > mask.similarity_threshold:
         img = mask.overlay(img, 5, (0, 255, 0))
       else:
         img = mask.overlay(img, 5, (0, 0, 255))
@@ -169,12 +169,22 @@ def handle_state_event(data):
 def handle_mask_event(data):
   state = stateTracker.get_state(data["id"])
   if state is not None:
-    if (data["action"] == "set"):
-      handle_update_Frame(data)
-      stateTracker.apply_mask(data["id"], Mask.crop_from_frame(
-          state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}))
-    elif (data["action"] == "clear"):
-      state.mask = None
+    match data["action"]:
+      case "set":
+        handle_update_Frame(state)
+        stateTracker.apply_mask(data["id"], Mask.crop_from_frame(
+            state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}))
+      case "clear":
+        state.mask = None
+      case "update_frame":
+        stateTracker.setImage(data["id"], camera.get_last_frame())
+        if (state.mask is not None):
+          state.mask = Mask.crop_from_frame(
+              state.frame.frame_buffer, {"x": state.mask.offset[0], "y": state.mask.offset[1],
+                                         "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]})
+      case "set_similarity":
+        if (state.mask is not None):
+          state.mask.similarity_threshold = float(data["value"])
     socket.emit('state_update', state.get_data())
 
 
@@ -183,16 +193,12 @@ def handle_test_mask_event(data):
   stateTracker.set_testing_id(data["id"])
 
 
-@socket.on('updateFrame')
-def handle_update_Frame(data):
-  state = stateTracker.get_state(data["id"])
-  if (state):
-    stateTracker.setImage(data["id"], camera.get_last_frame())
-    if (state.mask is not None):
-      state.mask = Mask.crop_from_frame(
-          state.frame.frame_buffer, {"x": state.mask.offset[0], "y": state.mask.offset[1],
-                                     "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]})
-    socket.emit('state_update', stateTracker.get_state(data["id"]).get_data())
+def handle_update_Frame(state):
+  stateTracker.setImage(state.id, camera.get_last_frame())
+  if (state.mask is not None):
+    state.mask = Mask.crop_from_frame(
+        state.frame.frame_buffer, {"x": state.mask.offset[0], "y": state.mask.offset[1],
+                                   "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]})
 
 
 if __name__ == "__main__":
