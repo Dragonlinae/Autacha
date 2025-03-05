@@ -2,15 +2,6 @@ from enum import Enum
 import json
 
 
-class elementTypes(Enum):
-  ELEMENT = "Element"
-  STATE = "State"
-  EDGE = "Edge"
-
-  def to_json(self):
-    return self.value
-
-
 class Element:
   id_counter = 0
   passable_data = ["id", "type", "x", "y", "name", "actions"]
@@ -22,6 +13,7 @@ class Element:
     self.y = data.get("y", 0)
     self.name = data.get("name", "Element " + str(self.id))
     self.actions = data.get("actions", [])
+    self.mask = None
     Element.id_counter += 1
 
   def update(self, data):
@@ -54,7 +46,6 @@ class State(Element):
     self.outgoingEdges = data.get("outgoingEdges", [])
     self.incomingEdges = data.get("incomingEdges", [])
     self.name = data.get("name", "State " + str(self.id))
-    self.mask = None
 
   def update(self, data):
     super().update(data)

@@ -23,21 +23,30 @@ import socket from "../managers/socketManager.js";
   var maskTypeSelector = document.getElementById("inspector-mask-type");
   var maskTypeSimilarity = document.getElementById("inspector-mask-similarity");
   var maskTypeOCR = document.getElementById("inspector-mask-ocr");
+
+  var similaritySlider = document.getElementById("inspector-mask-similarity-slider");
+
+  var ocrSlider = document.getElementById("inspector-mask-ocr-slider");
+  var ocrType = document.getElementById("inspector-mask-ocr-typecast");
+  var ocrCondition = document.getElementById("inspector-mask-ocr-condition");
+  var ocrConditionValue = document.getElementById("inspector-mask-ocr-condition-value");
+
   maskTypeSelector.addEventListener("change", function () {
     if (maskTypeSelector.value === "similarity") {
       maskTypeSimilarity.hidden = false;
       maskTypeOCR.hidden = true;
+      socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_similarity", threshold: similaritySlider.value });
     } else if (maskTypeSelector.value === "ocr") {
       maskTypeSimilarity.hidden = true;
       maskTypeOCR.hidden = false;
+      socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType, condition: ocrCondition, target: ocrConditionValue });
     }
   });
 
-  var maskSlider = document.getElementById("inspector-mask-similarity-slider");
-  var maskSliderValue = document.getElementById("inspector-mask-similarity-value");
-  maskSlider.addEventListener("input", function () {
-    maskSliderValue.textContent = maskSlider.value;
-    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_similarity", value: maskSlider.value });
+  var similarityValue = document.getElementById("inspector-mask-similarity-value");
+  similaritySlider.addEventListener("input", function () {
+    similarityValue.textContent = similaritySlider.value;
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_similarity", threshold: similaritySlider.value });
   });
 
   var inspectorStateDiv = document.getElementById("inspector-state");

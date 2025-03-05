@@ -11,29 +11,12 @@ from flask_socketio import SocketIO
 import json
 import base64
 
-mouse_right_down_pos = None
-mouse_down_pos = None
-rect_mask = None
-saved_mask = None
-
-rect_masks = []
-saved_masks = []
-action_events = []
 offset = (0, 0)
 
 stream_max_dimension = 1280
 thumbnail_max_dimension = 256
 
 stateTracker = StateTracker()
-
-
-def get_similarity(frame1, frame2):
-  if frame1.width != frame2.width or frame1.height != frame2.height:
-    return -1
-  mse = np.sum((np.array(frame1.frame_buffer, dtype=np.float32) -
-                np.array(frame2.frame_buffer, dtype=np.float32))**2)
-  mse /= float(frame1.width * frame1.height * 3)
-  return 1 - np.sqrt(mse) / 255.0
 
 
 target = "%A_AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Google Play Games\\Arknights.lnk"
@@ -106,11 +89,15 @@ def stream_frames():
     img = frame.frame_buffer
     mask = stateTracker.get_testing_mask()
     if mask is not None:
-      similarity_score = mask.similarity(img)
-      if similarity_score > mask.similarity_threshold:
-        img = mask.overlay(img, 5, (0, 255, 0))
-      else:
-        img = mask.overlay(img, 5, (0, 0, 255))
+      match mask.detection_type:
+        case "similarity":
+          similarity_score = mask.similarity(img)
+          if similarity_score > mask.similarity_threshold:
+            img = mask.overlay(img, 5, (0, 255, 0))
+          else:
+            img = mask.overlay(img, 5, (0, 0, 255))
+        case "ocr":
+          mask.ocr()
 
     img = cv2.imencode(".jpg", img)[1]
 
@@ -184,7 +171,16 @@ def handle_mask_event(data):
                                          "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]})
       case "set_similarity":
         if (state.mask is not None):
-          state.mask.similarity_threshold = float(data["value"])
+          state.mask.detection_type = "similarity"
+          state.mask.similarity_threshold = float(data["threshold"])
+      case "set_ocr":
+        if (state.mask is not None):
+          state.mask.detection_type = "ocr"
+          state.mask.ocr_threshold = float(data["threshold"])
+          state.mask.ocr_type = data["type"]
+          state.mask.ocr_condition = data["condition"]
+          state.mask.ocr_target = data["target"]
+
     socket.emit('state_update', state.get_data())
 
 
