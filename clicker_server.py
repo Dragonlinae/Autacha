@@ -88,7 +88,7 @@ def stream_frames():
 
     img = frame.frame_buffer
     mask = stateTracker.get_testing_mask()
-    if mask is not None:
+    if mask and mask.valid():
       match mask.detection_type:
         case "similarity":
           similarity_score = mask.similarity(img)
@@ -97,7 +97,11 @@ def stream_frames():
           else:
             img = mask.overlay(img, 5, (0, 0, 255))
         case "ocr":
-          mask.ocr()
+          ocr_text = mask.ocr(img)
+          if mask.ocr_check_condition(ocr_text):
+            img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
+          else:
+            img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
 
     img = cv2.imencode(".jpg", img)[1]
 
@@ -130,7 +134,7 @@ def elementimg():
   if state is not None and state.frame is not None:
     img = state.frame.frame_buffer
     mask = state.mask
-    if mask is not None and overlay == "true":
+    if mask.valid() and overlay == "true":
       img = mask.overlay(img, 5, (0, 255, 0))
     img = cv2.imencode(".jpg", img)[1]
     return Response(img.tobytes(), mimetype='image/jpeg')
@@ -158,28 +162,27 @@ def handle_mask_event(data):
   if state is not None:
     match data["action"]:
       case "set":
-        handle_update_Frame(state)
-        stateTracker.apply_mask(data["id"], Mask.crop_from_frame(
-            state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}))
+        stateTracker.setImage(state.id, camera.get_last_frame())
+        state.mask.update_mask(Mask.crop_from_frame(
+            state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}), (int(data["x"]), int(data["y"])))
+        stateTracker.set_testing_id(data["id"])
       case "clear":
-        state.mask = None
+        state.mask.clear_mask()
       case "update_frame":
         stateTracker.setImage(data["id"], camera.get_last_frame())
-        if (state.mask is not None):
-          state.mask = Mask.crop_from_frame(
+        if state.mask.valid():
+          state.mask.update_mask(Mask.crop_from_frame(
               state.frame.frame_buffer, {"x": state.mask.offset[0], "y": state.mask.offset[1],
-                                         "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]})
+                                         "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]}), state.mask.offset)
       case "set_similarity":
-        if (state.mask is not None):
-          state.mask.detection_type = "similarity"
-          state.mask.similarity_threshold = float(data["threshold"])
+        state.mask.detection_type = "similarity"
+        state.mask.similarity_threshold = float(data["threshold"])
       case "set_ocr":
-        if (state.mask is not None):
-          state.mask.detection_type = "ocr"
-          state.mask.ocr_threshold = float(data["threshold"])
-          state.mask.ocr_type = data["type"]
-          state.mask.ocr_condition = data["condition"]
-          state.mask.ocr_target = data["target"]
+        state.mask.detection_type = "ocr"
+        state.mask.ocr_threshold = float(data["threshold"])
+        state.mask.ocr_type = data["type"]
+        state.mask.ocr_condition = data["condition"]
+        state.mask.ocr_target = data["target"]
 
     socket.emit('state_update', state.get_data())
 
@@ -187,14 +190,6 @@ def handle_mask_event(data):
 @socket.on('setTestMaskId')
 def handle_test_mask_event(data):
   stateTracker.set_testing_id(data["id"])
-
-
-def handle_update_Frame(state):
-  stateTracker.setImage(state.id, camera.get_last_frame())
-  if (state.mask is not None):
-    state.mask = Mask.crop_from_frame(
-        state.frame.frame_buffer, {"x": state.mask.offset[0], "y": state.mask.offset[1],
-                                   "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]})
 
 
 if __name__ == "__main__":

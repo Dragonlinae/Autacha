@@ -17,8 +17,8 @@
 </div>
 <div id="inspector-mask-ocr" hidden>
   <label for="inspector-mask-ocr-slider">Mask OCR Confidence Thershold</label>
-  <input id="inspector-mask-ocr-slider" type="range" min="0" max="1" step="0.01" value="0.9" list="tickmarks">
-  <span id="inspector-mask-ocr-value">0.9</span>
+  <input id="inspector-mask-ocr-slider" type="range" min="0" max="1" step="0.01" value="0.0" list="tickmarks">
+  <span id="inspector-mask-ocr-value">0.0</span>
   <div id="inspector-mask-ocr-condition-container">
     <select id="inspector-mask-ocr-typecast">
       <option value="string">String</option>
@@ -28,8 +28,10 @@
       <option value="equals">Equals</option>
       <option value="contains">Contains</option>
       <option value="greater">Greater Than</option>
+      <option value="greaterequal">Greater Than Or Equal</option>
       <option value="less">Less Than</option>
-      <option value="matches">Matches Regex</option>
+      <option value="lessequal">Less Than Or Equal</option>
+      <option value="regex">Matches Regex</option>
     </select>
     <input id="inspector-mask-ocr-condition-value" type="text" placeholder="Condition Value">
   </div>

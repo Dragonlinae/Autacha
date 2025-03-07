@@ -9,6 +9,7 @@ class VisualElement {
       playing: false,
       name: "Element",
       actions: [],
+      mask: null,
     };
     Object.assign(this, defaultData, data);
   }

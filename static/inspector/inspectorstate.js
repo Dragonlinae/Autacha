@@ -39,14 +39,38 @@ import socket from "../managers/socketManager.js";
     } else if (maskTypeSelector.value === "ocr") {
       maskTypeSimilarity.hidden = true;
       maskTypeOCR.hidden = false;
-      socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType, condition: ocrCondition, target: ocrConditionValue });
+      socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType.value, condition: ocrCondition.value, target: ocrConditionValue.value });
     }
   });
 
   var similarityValue = document.getElementById("inspector-mask-similarity-value");
   similaritySlider.addEventListener("input", function () {
     similarityValue.textContent = similaritySlider.value;
+  });
+  similaritySlider.addEventListener("change", function () {
+    similarityValue.textContent = similaritySlider.value;
     socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_similarity", threshold: similaritySlider.value });
+  });
+
+  var ocrValue = document.getElementById("inspector-mask-ocr-value");
+  ocrSlider.addEventListener("input", function () {
+    ocrValue.textContent = ocrSlider.value;
+  });
+  ocrSlider.addEventListener("change", function () {
+    ocrValue.textContent = ocrSlider.value;
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType.value, condition: ocrCondition.value, target: ocrConditionValue.value });
+  });
+
+  ocrType.addEventListener("change", function () {
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType.value, condition: ocrCondition.value, target: ocrConditionValue.value });
+  });
+
+  ocrCondition.addEventListener("change", function () {
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType.value, condition: ocrCondition.value, target: ocrConditionValue.value });
+  });
+
+  ocrConditionValue.addEventListener("change", function () {
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType.value, condition: ocrCondition.value, target: ocrConditionValue.value });
   });
 
   var inspectorStateDiv = document.getElementById("inspector-state");
@@ -59,6 +83,28 @@ import socket from "../managers/socketManager.js";
       } else {
         frameImg.hidden = true;
         frameImg.src = "";
+      }
+
+      if (selectedElement.getSelectedElement().mask) {
+        maskTypeSelector.value = selectedElement.getSelectedElement().mask.detection_type;
+        similaritySlider.value = selectedElement.getSelectedElement().mask.similarity_threshold;
+        ocrSlider.value = selectedElement.getSelectedElement().mask.ocr_threshold;
+        ocrType.value = selectedElement.getSelectedElement().mask.ocr_type;
+        ocrCondition.value = selectedElement.getSelectedElement().mask.ocr_condition;
+        ocrConditionValue.value = selectedElement.getSelectedElement().mask.ocr_target;
+
+
+        if (maskTypeSelector.value === "similarity") {
+          maskTypeSimilarity.hidden = false;
+          maskTypeOCR.hidden = true;
+        } else if (maskTypeSelector.value === "ocr") {
+          maskTypeSimilarity.hidden = true;
+          maskTypeOCR.hidden = false;
+        }
+
+        similarityValue.textContent = similaritySlider.value;
+        ocrValue.textContent = ocrSlider.value;
+
       }
     }
   };

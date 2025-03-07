@@ -1,4 +1,5 @@
 from enum import Enum
+from helpers.mask_class import Mask
 import json
 
 
@@ -13,7 +14,9 @@ class Element:
     self.y = data.get("y", 0)
     self.name = data.get("name", "Element " + str(self.id))
     self.actions = data.get("actions", [])
-    self.mask = None
+    self.mask = Mask()
+    self.frame = data.get("frame", None)
+    self.image = data.get("image", None)
     Element.id_counter += 1
 
   def update(self, data):
@@ -26,9 +29,15 @@ class Element:
     self.y = data.get("y", self.y)
     self.name = data.get("name", self.name)
 
+  def setImage(self, frame):
+    self.frame = frame
+    self.image = "/elementimg?id=" + str(self.id)
+
   def get_data(self):
     data = {key: getattr(self, key)
             for key in Element.passable_data if hasattr(self, key)}
+    if self.mask:
+      data["mask"] = self.mask.get_data()
     return data
 
 
@@ -40,8 +49,6 @@ class State(Element):
     self.type = "State"
     self.width = data.get("width", 100)
     self.height = data.get("height", 50)
-    self.frame = data.get("frame", None)
-    self.image = data.get("image", None)
     self.borderThickness = data.get("borderThickness", 10)
     self.outgoingEdges = data.get("outgoingEdges", [])
     self.incomingEdges = data.get("incomingEdges", [])

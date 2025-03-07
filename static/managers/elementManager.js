@@ -130,6 +130,8 @@ class ElementManager {
   }
 
   updateElement(data) {
+
+    console.log(data);
     if (data.type == "Edge") {
       this.edgeTransformer(data);
     }

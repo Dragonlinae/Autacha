@@ -9,3 +9,4 @@ with PyTessBaseAPI(path='./tessdata') as api:
       print(f"word: {word}, conf: {conf}")
 
     print(api.GetUTF8Text())
+    print(api.GetAllWordConfidences())
