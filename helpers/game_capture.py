@@ -1,7 +1,8 @@
 from windows_capture import WindowsCapture, Frame, InternalCaptureControl
-from time import time
+import time
 import win32gui
 import copy
+from helpers.rwlock import RWLock
 
 
 class GameCapture:
@@ -18,14 +19,16 @@ class GameCapture:
     self.stop_flag = False
     self.capture_control = None
     self.title_bar_height = self.get_title_bar_dimensions(window_name)[0]
+    self.lock = RWLock()
 
     @self.capture.event
     def on_frame_arrived(frame: Frame, capture_control: InternalCaptureControl):
       # print("New Frame Arrived")
-      self.frame = frame
-      self.frame = self.frame.crop(
-          0, self.title_bar_height, frame.width, frame.height)
-      self.frame_number += 1
+      with self.lock.write:
+        self.frame = copy.deepcopy(frame)
+        self.frame = self.frame.crop(
+            0, self.title_bar_height, frame.width, frame.height)
+        self.frame_number += 1
       self.capture_control = capture_control
       if self.stop_flag:
         capture_control.stop()
@@ -50,9 +53,11 @@ class GameCapture:
     self.capture.start_free_threaded()
 
   def get_last_frame(self):
-    if self.frame is None:
-      return None
-    return copy.deepcopy(self.frame)
+    res = None
+    with self.lock.read:
+      if self.frame is not None:
+        res = copy.deepcopy(self.frame)
+    return res
 
   def get_frame_ref(self):
     return self.frame

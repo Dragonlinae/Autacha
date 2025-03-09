@@ -37,7 +37,8 @@ class Element:
     data = {key: getattr(self, key)
             for key in Element.passable_data if hasattr(self, key)}
     if self.mask:
-      data["mask"] = self.mask.get_data()
+      with self.mask.read:
+        data["mask"] = self.mask.get_data()
     return data
 
 

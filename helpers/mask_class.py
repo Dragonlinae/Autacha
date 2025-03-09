@@ -5,6 +5,7 @@ from PIL import Image
 import re
 from numpy import ndarray
 from threading import Thread, Lock
+from helpers.rwlock import RWLock
 
 
 class Mask:
@@ -24,6 +25,7 @@ class Mask:
     self.ocr_target = ""
     self.ocr_last_read = ""
     self.ocr_lock = Lock()
+    self.lock = RWLock()
 
   @classmethod
   def crop_from_frame(cls, frame, mask_region):
@@ -38,14 +40,16 @@ class Mask:
     return mask
 
   def clear_mask(self):
-    self.mask = ndarray((0, 0, 4))
-    self.dimensions = (0, 0)
-    self.offset = (0, 0)
+    with self.lock.write:
+      self.mask = ndarray((0, 0, 4))
+      self.dimensions = (0, 0)
+      self.offset = (0, 0)
 
   def update_mask(self, mask, offset):
-    self.mask = mask
-    self.dimensions = mask.shape[:2]
-    self.offset = offset
+    with self.lock.write:
+      self.mask = mask
+      self.dimensions = mask.shape[:2]
+      self.offset = offset
 
   def valid(self):
     return self.dimensions[0] > 0 and self.dimensions[1] > 0
@@ -54,23 +58,24 @@ class Mask:
     comp_area = frame[self.offset[1]:self.offset[1] + self.dimensions[0],
                       self.offset[0]:self.offset[0] + self.dimensions[1]]
     mse = np.sum((np.array(self.mask, dtype=np.float32) -
-                 np.array(comp_area, dtype=np.float32))**2)
+                  np.array(comp_area, dtype=np.float32))**2)
     mse /= float(self.dimensions[0] * self.dimensions[1] * 3)
     return 1 - np.sqrt(mse) / 255.0
 
   def ocr_thread(self, frame):
-    try:
-      with PyTessBaseAPI(path='./tessdata') as api:
-        comp_area = frame[self.offset[1]:self.offset[1] + self.dimensions[0],
-                          self.offset[0]:self.offset[0] + self.dimensions[1]]
-        api.SetImage(Image.fromarray(comp_area))
-        res = []
-        for word, conf in zip(api.GetUTF8Text().split(), api.AllWordConfidences()):
-          if conf >= self.ocr_threshold:
-            res.append(word)
-        self.ocr_last_read = ' '.join(res)
-    finally:
-      self.ocr_lock.release()
+    with self.lock.read:
+      try:
+        with PyTessBaseAPI(path='./tessdata') as api:
+          comp_area = frame[self.offset[1]:self.offset[1] + self.dimensions[0],
+                            self.offset[0]:self.offset[0] + self.dimensions[1]]
+          api.SetImage(Image.fromarray(comp_area))
+          res = []
+          for word, conf in zip(api.GetUTF8Text().split(), api.AllWordConfidences()):
+            if conf >= self.ocr_threshold:
+              res.append(word)
+          self.ocr_last_read = ' '.join(res)
+      finally:
+        self.ocr_lock.release()
 
   def ocr(self, frame):
     if self.ocr_lock.acquire(blocking=False):
@@ -122,7 +127,6 @@ class Mask:
   def overlay(self, frame, borderThickness=0, borderColor=(0, 0, 0), text=""):
     overlay = frame.copy()
     if self.detection_type == "similarity":
-      print(self.dimensions)
       overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
               self.offset[0]:self.offset[0] + self.dimensions[1]] = cv2.addWeighted(
                   self.mask, 0.5, overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
@@ -141,3 +145,33 @@ class Mask:
     data = {key: getattr(self, key)
             for key in Mask.passable_data if hasattr(self, key)}
     return data
+
+  class ReadContext:
+    def __init__(self, rwlock):
+      self.rwlock = rwlock
+
+    def __enter__(self):
+      self.rwlock.acquire_read()
+      return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+      self.rwlock.release_read()
+
+  class WriteContext:
+    def __init__(self, rwlock):
+      self.rwlock = rwlock
+
+    def __enter__(self):
+      self.rwlock.acquire_write()
+      return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+      self.rwlock.release_write()
+
+  @property
+  def read(self):
+    return self.ReadContext(self.lock)
+
+  @property
+  def write(self):
+    return self.WriteContext(self.lock)

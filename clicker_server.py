@@ -70,7 +70,6 @@ def get_thumbnail():
 
 def stream_frames():
   frame_number = -1
-  frame = camera.get_frame_ref()
   while True:
     if (frame_number == camera.frame_number):
       time.sleep(0.01)
@@ -86,22 +85,24 @@ def stream_frames():
     #       img, (stream_max_dimension, int(h * stream_max_dimension / w)))
     # img = cv2.imencode(".png", img)[1]
 
-    img = frame.frame_buffer
+    img = camera.get_last_frame().frame_buffer
     mask = stateTracker.get_testing_mask()
-    if mask and mask.valid():
-      match mask.detection_type:
-        case "similarity":
-          similarity_score = mask.similarity(img)
-          if similarity_score > mask.similarity_threshold:
-            img = mask.overlay(img, 5, (0, 255, 0))
-          else:
-            img = mask.overlay(img, 5, (0, 0, 255))
-        case "ocr":
-          ocr_text = mask.ocr(img)
-          if mask.ocr_check_condition(ocr_text):
-            img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
-          else:
-            img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
+    if mask:
+      with mask.read:
+        if mask.valid():
+          match mask.detection_type:
+            case "similarity":
+              similarity_score = mask.similarity(img)
+              if similarity_score > mask.similarity_threshold:
+                img = mask.overlay(img, 5, (0, 255, 0))
+              else:
+                img = mask.overlay(img, 5, (0, 0, 255))
+            case "ocr":
+              ocr_text = mask.ocr(img)
+              if mask.ocr_check_condition(ocr_text):
+                img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
+              else:
+                img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
 
     img = cv2.imencode(".jpg", img)[1]
 
@@ -158,14 +159,16 @@ def handle_state_event(data):
 
 @socket.on('mask_event')
 def handle_mask_event(data):
+  print(data)
   state = stateTracker.get_state(data["id"])
   if state is not None:
     match data["action"]:
       case "set":
-        stateTracker.setImage(state.id, camera.get_last_frame())
-        state.mask.update_mask(Mask.crop_from_frame(
-            state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}), (int(data["x"]), int(data["y"])))
-        stateTracker.set_testing_id(data["id"])
+        if data["width"] != 0 and data["height"] != 0:
+          stateTracker.setImage(state.id, camera.get_last_frame())
+          state.mask.update_mask(Mask.crop_from_frame(
+              state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}), (int(data["x"]), int(data["y"])))
+          stateTracker.set_testing_id(data["id"])
       case "clear":
         state.mask.clear_mask()
       case "update_frame":
@@ -193,4 +196,4 @@ def handle_test_mask_event(data):
 
 
 if __name__ == "__main__":
-  socket.run(app, debug=True)
+  socket.run(app, debug=False)
