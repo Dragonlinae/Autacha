@@ -1,13 +1,21 @@
 {% if head %}
+<link rel="stylesheet" href="/inspector/inspectoractionlist.css">
 {% endif %}
 
 {% if body %}
-<div id="inspector-action-list">
-  <button id="add-action">Add Action</button>
-  <button id="save-action">Save Actions</button>
-  <ul id="action-list">
-  </ul>
+<div>
+  <button id="save-actions">Save Actions</button>
 </div>
+<div>
+  <button id="test-all-actions">Test All Actions</button>
+</div>
+<div>
+  <select name="add-action-selector" id="add-action-selector">
+  </select>
+  <button id="add-action">Add Action</button>
+</div>
+<ul id="action-list">
+</ul>
 
 <template id="action-template">
   <li class="action-item">
@@ -31,52 +39,75 @@
 </template>
 
 <template id="action-click-params-template">
-  <label>X:
-    <input type="number" name="click-x" value="0" min="0" max="1920" step="1">
-  </label>
-  <label>Y:
-    <input type="number" name="click-y" value="0" min="0" max="1080" step="1">
-  </label>
-  <button class="record-click">Record Click</button>
-  <button class="simulate-click">Simulate Click</button>
-</template>
-
-<template id="action-drag-params-template">
-  <label>X:
-    <input type="number" name="drag-x" value="0" min="0" max="1920" step="1">
-  </label>
-  <label>Y:
-    <input type="number" name="drag-y" value="0" min="0" max="1080" step="1">
-  </label>
-  <button class="record-drag">Record Drag</button>
-  <button class="simulate-drag">Simulate Drag</button>
-</template>
-
-<template id="action-cont-drag-params-template">
-  <canvas id="cont-drag-canvas" width="50" height="50"></canvas>
-  <button class="record-cont-drag">Record Continuous Drag</button>
-  <button class="simulate-cont-drag">Simulate Continuous Drag</button>
-</template>
-
-<template id="action-key-params-template">
-  <label>Key:
-    <input type="text" name="key-code" value="{ENTER}">
-  </label>
   <label>Type:
-    <select name="press-type">
+    <select name="presstype">
       <option value="press">Press</option>
       <option value="down">Down</option>
       <option value="up">Up</option>
     </select>
   </label>
-  <button class="record-key">Record Key</button>
-  <button class="simulate-key">Simulate Key</button>
+  <label>X:
+    <input type="number" name="xpos" value="0" min="0" step="1">
+  </label>
+  <label>Y:
+    <input type="number" name="ypos" value="0" min="0" step="1">
+  </label>
+  <button class="record-click" name="record-click" onclick="actionListFuncs.recordClick(this.parentElement)">Record
+    Click</button>
+  <button class="simulate" name="simulate-click" onclick="actionListFuncs.simulateClick(this.parentElement)">Simulate
+    Click</button>
+</template>
+
+<template id="action-drag-params-template">
+  <div>
+    <label>X1:
+      <input type="number" name="startx" value="0" min="0" step="1">
+    </label>
+    <label>Y1:
+      <input type="number" name="starty" value="0" min="0" step="1">
+    </label>
+  </div>
+  <div>
+    <label>X2:
+      <input type="number" name="endx" value="0" min="0" step="1">
+    </label>
+    <label>Y2:
+      <input type="number" name="endy" value="0" min="0" step="1">
+    </label>
+  </div>
+  <label>Velocity:
+    <input type="number" name="velocity" value="1" min="1" step="1">
+  </label>
+  <button class="record-drag" name="record-drag">Record Drag</button>
+  <button class="simulate" name="simulate-drag">Simulate Drag</button>
+</template>
+
+<template id="action-cont-drag-params-template">
+  <label>Vertices:
+    <input type="text" name="vertices" value="">
+  </label>
+  <button class="record-cont-drag" name="record-cont-drag"
+    onclick="actionListFuncs.recordContDrag(this.parentElement)">Record Continuous
+    Drag</button>
+  <button class="simulate" name="simulate-cont-drag"
+    onclick="actionListFuncs.simulateContDrag(this.parentElement)">Simulate Continuous
+    Drag</button>
+</template>
+
+<template id="action-key-params-template">
+  <label>Key:
+    <input type="text" name="keycode" value="{ENTER}">
+  </label>
+  <button class="simulate" name="simulate-key" onclick="actionListFuncs.simulateKey(this.parentElement)">Simulate
+    Key</button>
 </template>
 
 <template id="action-wait-params-template">
   <label>Time (ms):
-    <input type="number" name="wait-time" value="0" min="0" step="1">
+    <input type="number" name="time" value="0" min="0" step="1">
   </label>
+  <button class="simulate" name="simulate-wait" onclick="actionListFuncs.wait(this.parentElement)" hidden>Simulate
+    Wait</button>
 </template>
 
 {% endif %}

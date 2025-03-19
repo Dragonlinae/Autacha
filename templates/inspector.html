@@ -1,5 +1,8 @@
 {% if head %}
 <link rel="stylesheet" href="/inspector/inspector.css">
+{% include "inspectorstate.html" %}
+{% include "inspectoredge.html" %}
+{% include "inspectoractionlist.html" %}
 {% endif %}
 
 {% if body %}
@@ -11,6 +14,9 @@
   <div id="inspector-edge" hidden>
     {% include "inspectoredge.html" %}
   </div>
+  <div id="inspector-action-list" hidden>
+    {% include "inspectoractionlist.html" %}
+  </div>
 </div>
 {% endif %}
 
@@ -18,4 +24,5 @@
 <script src="/inspector/inspector.js" type="module"></script>
 {% include "inspectorstate.html" %}
 {% include "inspectoredge.html" %}
+{% include "inspectoractionlist.html" %}
 {% endif %}

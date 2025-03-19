@@ -1,27 +1,52 @@
 import socket from "../managers/socketManager.js";
+import record from "../managers/recordManager.js";
 import { selectedElement } from "../managers/selectedelementManager.js";
 
 (function () {
   var regions = [];
+  var timer = 0;
 
   function click(xpos, ypos) {
-    socket.emit('mouse_event', { "action": "click", "xpos": xpos, "ypos": ypos });
+    xpos = Math.trunc(xpos);
+    ypos = Math.trunc(ypos);
+    socket.emit('input_event', { "type": "click", "xpos": xpos, "ypos": ypos });
   }
 
   function drag(startx, starty, endx, endy, velocity) {
-    socket.emit('mouse_event', { "action": "drag", "startx": startx, "starty": starty, "endx": endx, "endy": endy, "velocity": velocity });
+    startx = Math.trunc(startx);
+    starty = Math.trunc(starty);
+    endx = Math.trunc(endx);
+    endy = Math.trunc(endy);
+    socket.emit('input_event', { "type": "drag", "startx": startx, "starty": starty, "endx": endx, "endy": endy, "velocity": velocity });
   }
 
   function dragStart(xpos, ypos) {
-    socket.emit('mouse_event', { "action": "dragStart", "xpos": xpos, "ypos": ypos });
+    xpos = Math.trunc(xpos);
+    ypos = Math.trunc(ypos);
+    socket.emit('input_event', { "type": "dragStart", "xpos": xpos, "ypos": ypos });
+    if (record.active && record.targets.has("dragStart")) {
+      timer = Math.round(performance.now());
+      record.callback({ "type": "dragStart", "xpos": xpos, "ypos": ypos, "time": 0 });
+    }
   }
 
   function dragMove(xpos, ypos) {
-    socket.volatile.emit('mouse_event', { "action": "dragMove", "xpos": xpos, "ypos": ypos });
+    xpos = Math.trunc(xpos);
+    ypos = Math.trunc(ypos);
+    socket.volatile.emit('input_event', { "type": "dragMove", "xpos": xpos, "ypos": ypos });
+    if (record.active && record.targets.has("dragMove")) {
+      record.callback({ "type": "dragMove", "xpos": xpos, "ypos": ypos, "time": Math.round(performance.now()) - timer });
+    }
   }
 
   function dragEnd(xpos, ypos) {
-    socket.emit('mouse_event', { "action": "dragEnd", "xpos": xpos, "ypos": ypos });
+    xpos = Math.trunc(xpos);
+    ypos = Math.trunc(ypos);
+    socket.emit('input_event', { "type": "dragEnd", "xpos": xpos, "ypos": ypos });
+    if (record.active && record.targets.has("dragEnd")) {
+      record.callback({ "type": "dragEnd", "xpos": xpos, "ypos": ypos, "time": Math.round(performance.now()) - timer });
+      record.active = false;
+    }
   }
 
   var c = document.getElementById("video-canvas");

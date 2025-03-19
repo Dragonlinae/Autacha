@@ -4,6 +4,7 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
 (function () {
   var insState = document.getElementById("inspector-state");
   var insEdge = document.getElementById("inspector-edge");
+  var insActionList = document.getElementById("inspector-action-list")
 
   insState.hidden = true;
   insEdge.hidden = true;
@@ -14,13 +15,18 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
         insState.hidden = false;
         insState.update();
         insEdge.hidden = true;
+        insActionList.hidden = false;
+        insActionList.update();
       } else if (selectedElement.getSelectedElement() instanceof EdgeVisualElement) {
         insState.hidden = true;
         insEdge.hidden = false;
+        insActionList.hidden = false;
+        insActionList.update();
       }
     } else {
       insState.hidden = true;
       insEdge.hidden = true;
+      insActionList.hidden = true;
     }
   }
   selectedElement.onSelect(updateInspector);

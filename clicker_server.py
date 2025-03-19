@@ -1,5 +1,5 @@
 from helpers.game_capture import GameCapture
-from helpers.game_interaction import mouse_action
+import helpers.game_interaction as GameInteraction
 from helpers.state_tracker import StateTracker
 from helpers.mask_class import Mask
 import time
@@ -94,9 +94,9 @@ def stream_frames():
             case "similarity":
               similarity_score = mask.similarity(img)
               if similarity_score > mask.similarity_threshold:
-                img = mask.overlay(img, 5, (0, 255, 0))
+                img = mask.overlay(img, 5, (0, 255, 0), str(similarity_score))
               else:
-                img = mask.overlay(img, 5, (0, 0, 255))
+                img = mask.overlay(img, 5, (0, 0, 255), str(similarity_score))
             case "ocr":
               ocr_text = mask.ocr(img)
               if mask.ocr_check_condition(ocr_text):
@@ -142,13 +142,21 @@ def elementimg():
   return ""
 
 
-@socket.on('mouse_event')
+@socket.on('input_event')
 def handle_action_event(data):
-  return mouse_action(win, data, offset)
+  return GameInteraction.input_action(win, data, offset)
+
+
+@socket.on('simulate_event')
+def handle_action_event(data):
+  element = stateTracker.get_element(data["id"])
+  if element is not None:
+    return element.simulate(win, offset)
 
 
 @socket.on('state_event')
 def handle_state_event(data):
+  print(data)
   res = stateTracker.update(data)
   if res is not None:
     if isinstance(res, dict):
@@ -159,35 +167,47 @@ def handle_state_event(data):
 
 @socket.on('mask_event')
 def handle_mask_event(data):
-  print(data)
-  state = stateTracker.get_state(data["id"])
-  if state is not None:
+  element = stateTracker.get_element(data["id"])
+  if element is not None:
     match data["action"]:
       case "set":
         if data["width"] != 0 and data["height"] != 0:
-          stateTracker.setImage(state.id, camera.get_last_frame())
-          state.mask.update_mask(Mask.crop_from_frame(
-              state.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}), (int(data["x"]), int(data["y"])))
+          stateTracker.setImage(element.id, camera.get_last_frame())
+          element.mask.update_mask(Mask.crop_from_frame(
+              element.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}), (int(data["x"]), int(data["y"])))
           stateTracker.set_testing_id(data["id"])
       case "clear":
-        state.mask.clear_mask()
+        element.mask.clear_mask()
       case "update_frame":
         stateTracker.setImage(data["id"], camera.get_last_frame())
-        if state.mask.valid():
-          state.mask.update_mask(Mask.crop_from_frame(
-              state.frame.frame_buffer, {"x": state.mask.offset[0], "y": state.mask.offset[1],
-                                         "width": state.mask.dimensions[1], "height": state.mask.dimensions[0]}), state.mask.offset)
+        if element.mask.valid():
+          element.mask.update_mask(Mask.crop_from_frame(
+              element.frame.frame_buffer, {"x": element.mask.offset[0], "y": element.mask.offset[1],
+                                           "width": element.mask.dimensions[1], "height": element.mask.dimensions[0]}), element.mask.offset)
       case "set_similarity":
-        state.mask.detection_type = "similarity"
-        state.mask.similarity_threshold = float(data["threshold"])
+        element.mask.detection_type = "similarity"
+        element.mask.similarity_threshold = float(data["threshold"])
       case "set_ocr":
-        state.mask.detection_type = "ocr"
-        state.mask.ocr_threshold = float(data["threshold"])
-        state.mask.ocr_type = data["type"]
-        state.mask.ocr_condition = data["condition"]
-        state.mask.ocr_target = data["target"]
+        element.mask.detection_type = "ocr"
+        element.mask.ocr_threshold = float(data["threshold"])
+        element.mask.ocr_type = data["type"]
+        element.mask.ocr_condition = data["condition"]
+        element.mask.ocr_target = data["target"]
 
-    socket.emit('state_update', state.get_data())
+    socket.emit('state_update', element.get_data())
+
+
+@socket.on('action_list_event')
+def handle_action_list_event(data):
+  print(data)
+  print(json.dumps(data))
+  element = stateTracker.get_element(data["id"])
+  if element is not None:
+    match data["action"]:
+      case "set":
+        element.actions = data["actionlist"]
+        socket.emit('state_update', element.get_data())
+        return {"status": "success"}
 
 
 @socket.on('setTestMaskId')
@@ -196,4 +216,4 @@ def handle_test_mask_event(data):
 
 
 if __name__ == "__main__":
-  socket.run(app, debug=False)
+  socket.run(app, debug=True)

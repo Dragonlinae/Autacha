@@ -131,7 +131,8 @@ class Mask:
               self.offset[0]:self.offset[0] + self.dimensions[1]] = cv2.addWeighted(
                   self.mask, 0.5, overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
                                           self.offset[0]:self.offset[0] + self.dimensions[1]], 0.5, 0)
-    elif self.detection_type == "ocr":
+
+    if text != "":
       cv2.putText(overlay, text, (30, 30),
                   cv2.FONT_HERSHEY_COMPLEX, 1, borderColor, 2)
 

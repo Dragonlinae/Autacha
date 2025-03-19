@@ -131,3 +131,6 @@ class StateTracker:
     else:
       self.testing_id = -1
       return False
+
+  def get_element(self, id):
+    return self.get_state(id) or self.get_edge(id)

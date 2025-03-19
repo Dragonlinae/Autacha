@@ -1,5 +1,6 @@
 import time
 import numpy as np
+from threading import Timer
 
 
 def drag_mouse(win, start, end, velocity, offset):
@@ -29,6 +30,23 @@ def drag_move(win, pos, offset):
 def mouse_up(win, pos, offset):
   pos = (pos[0] + offset[0], pos[1] + offset[1])
   win.click(pos[0], pos[1], options="U NA")
+
+
+def drag_mouse_vec(win, vertices, offset):
+  currtime = time.time()
+  for i in range(len(vertices)):
+    delay = vertices[i][2]/1000.0 + currtime - time.time()
+    if (delay > 0):
+      time.sleep(delay)
+    match vertices[i][3]:
+      case 0:
+        mouse_down(win, vertices[i][:2], offset)
+      case 1:
+        mouse_up(win, vertices[i][:2], offset)
+    # Timer(vertices[i][2]/1000.0 + currtime - time.time(), mouse_down,
+    #       [win, vertices[i][:2], offset]).start()
+  # Timer(vertices[-1][2]/1000.0 + currtime - time.time(), mouse_up,
+  #       [win, vertices[-1][:2], offset]).start()
 
 
 def click_mouse(win, pos, offset):

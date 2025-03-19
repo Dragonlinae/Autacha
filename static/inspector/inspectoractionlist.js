@@ -1,51 +1,104 @@
-{/* <template id="action-template">
-<li class="action-item">
-  <span class="dragger">☰</span>
-  <span class="action-type">{{ action_type }}</span>
-  <span class="action-params">{{ action_params }}</span>
-  <button class="delete-action">Delete</button>
-</li>
-</template> */}
-
+import { selectedElement } from "../managers/selectedelementManager.js";
+import record from "../managers/recordManager.js";
+import socket from "../managers/socketManager.js";
 
 (function () {
+  var insActionList = document.getElementById("inspector-action-list")
   var actionList = document.getElementById("action-list");
   var elementTemplate = document.getElementById("action-template");
+  var addActionSelector = document.getElementById("add-action-selector")
   var addActionButton = document.getElementById("add-action");
-  var saveActionButton = document.getElementById("save-action");
+  var saveActionButton = document.getElementById("save-actions");
+  var testActionsButton = document.getElementById("test-all-actions");
+
+  var friendlynaminator9000 = {
+    "click": "Click",
+    "dragVertices": "Continuous Drag",
+    "key": "Key",
+    "wait": "Wait"
+  }
 
   var paramTemplates = {
     "click": document.getElementById("action-click-params-template"),
-    "drag": document.getElementById("action-drag-params-template"),
-    "cont-drag": document.getElementById("action-cont-drag-params-template"),
+    // "Drag": document.getElementById("action-drag-params-template"),
+    "dragVertices": document.getElementById("action-cont-drag-params-template"),
     "key": document.getElementById("action-key-params-template"),
     "wait": document.getElementById("action-wait-params-template"),
   };
 
+  for (const key of Object.keys(paramTemplates)) {
+    var actionSelectorItem = document.createElement("option");
+    actionSelectorItem.value = key;
+    actionSelectorItem.innerText = friendlynaminator9000[key];
+    console.log(actionSelectorItem);
+    addActionSelector.appendChild(actionSelectorItem);
+  }
+
   addActionButton.addEventListener("click", function () {
-    var action = {
-      type: Object.keys(paramTemplates)[Math.floor(Math.random() * Object.keys(paramTemplates).length)]
-    };
+    var action = addActionSelector.value
     var element = createActionElement(action)
     actionList.appendChild(element);
-    element = actionList.lastElementChild;
-    console.log(element);
   });
 
   saveActionButton.addEventListener("click", function () {
     var actions = [];
     var actionElements = actionList.children;
-    for (var i = 0; i < actionElements.length; i++) {
+    for (let i = 0; i < actionElements.length; i++) {
       actions.push(actionElements[i].toActionSave());
     }
+    socket.emit("action_list_event", {
+      id: selectedElement.getSelectedElement().getId(), action: "set", actionlist: actions
+    });
     console.log(actions);
   });
 
+  testActionsButton.addEventListener("click", function () {
+    var actions = [];
+    var actionElements = actionList.children;
+    for (let i = 0; i < actionElements.length; i++) {
+      actions.push(actionElements[i].toActionSave());
+    }
+    socket.emit("action_list_event", {
+      id: selectedElement.getSelectedElement().getId(), action: "set", actionlist: actions
+    }, function (confirmation) {
+      socket.emit("simulate_event", {
+        id: selectedElement.getSelectedElement().getId()
+      }, function (confirmation2) {
+        console.log(confirmation2);
+      });
+    });
+  });
+
+  insActionList.update = function () {
+    actionList.innerHTML = '';
+    if (selectedElement.getSelectedElement() && selectedElement.getSelectedElement().actions) {
+      for (const action of selectedElement.getSelectedElement().actions) {
+        console.log(action);
+        var element = createActionElement(action.type);
+
+        var labels = element.querySelector(".action-params").querySelectorAll("label");
+        for (let i = 0; i < labels.length; i++) {
+          console.log(labels[i]);
+          var input = labels[i].querySelector("input") || labels[i].querySelector("select");
+          console.log(input);
+          if (input.name in action) {
+            if (input.name == "vertices") {
+              input.value = JSON.stringify(action[input.name]);
+            } else {
+              input.value = action[input.name];
+            }
+          }
+        }
+        actionList.appendChild(element);
+      }
+    }
+  }
+
   function createActionElement(action) {
     var element = elementTemplate.content.cloneNode(true).children[0];
-    element.actionType = action.type;
-    element.querySelector(".action-type").textContent = action.type;
-    element.querySelector(".action-params").append(paramTemplates[action.type].content.cloneNode(true));
+    element.actionType = action;
+    element.querySelector(".action-type").textContent = action;
+    element.querySelector(".action-params").append(paramTemplates[action].content.cloneNode(true));
     element.querySelector(".delete-action").addEventListener("click", function () {
       element.remove();
     });
@@ -56,11 +109,15 @@
     element.toActionSave = function () {
       var actionSave = { type: element.actionType };
       var labels = element.querySelector(".action-params").querySelectorAll("label");
-      for (var i = 0; i < labels.length; i++) {
+      for (let i = 0; i < labels.length; i++) {
         console.log(labels[i]);
         var input = labels[i].querySelector("input") || labels[i].querySelector("select");
         console.log(input);
-        actionSave[input.name] = input.value;
+        if (input.name == "vertices") {
+          actionSave[input.name] = JSON.parse(input.value);
+        } else {
+          actionSave[input.name] = input.value;
+        }
       }
       return actionSave;
     }
@@ -126,6 +183,106 @@
       placeholder.remove();
     });
   }
+
+
+  // Record and Simulate Handlers
+
+  var actionListFuncs = {};
+
+  function recordCancel() {
+    if (record.active) {
+      record.callback();
+      record.active = false;
+    }
+  }
+
+  function recordClick(div) {
+    if (div.querySelector('button[name="record-click"]').classList.contains("record-active")) {
+      recordCancel();
+      return;
+    }
+    recordCancel();
+
+    record.targets = new Set(["dragEnd"]);
+    div.querySelector('button[name="record-click"]').classList.add("record-active");
+    record.callback = function (data) {
+      if (data && "type" in data) {
+        if (data["type"] == "dragEnd") {
+          div.querySelector('input[name="xpos"]').value = data["xpos"];
+          div.querySelector('input[name="ypos"]').value = data["ypos"];
+          div.querySelector('button[name="record-click"]').classList.remove("record-active");
+          record.active = false;
+        }
+      } else {
+        div.querySelector('button[name="record-click"]').classList.remove("record-active");
+        record.active = false;
+      }
+    }
+    record.active = true;
+  }
+
+  function simulateClick(div) {
+    var xpos = div.querySelector('input[name="xpos"]').value;
+    var ypos = div.querySelector('input[name="ypos"]').value;
+    var pressType = div.querySelector('select[name="presstype"]').value
+    socket.emit('input_event', { "type": "click", "xpos": xpos, "ypos": ypos, "presstype": pressType });
+  }
+
+  function recordContDrag(div) {
+    if (div.querySelector('button[name="record-cont-drag"]').classList.contains("record-active")) {
+      recordCancel();
+      return;
+    }
+    recordCancel();
+
+    record.targets = new Set(["dragStart", "dragMove", "dragEnd"]);
+    div.querySelector('button[name="record-cont-drag"]').classList.add("record-active");
+    var dragPoints = []
+    record.callback = function (data) {
+      if (data && "type" in data) {
+        if (["dragStart", "dragMove"].includes(data["type"])) {
+          dragPoints.push([data["xpos"], data["ypos"], data["time"], 0]);
+        }
+        if (data["type"] == "dragEnd") {
+          dragPoints.push([data["xpos"], data["ypos"], data["time"], 1]);
+          div.querySelector('input[name="vertices"]').value = JSON.stringify(dragPoints)
+          div.querySelector('button[name="record-cont-drag"]').classList.remove("record-active");
+          record.active = false;
+        }
+      } else {
+        div.querySelector('button[name="record-cont-drag"]').classList.remove("record-active");
+        record.active = false;
+      }
+    }
+    record.active = true;
+  }
+
+  function simulateContDrag(div) {
+    var dragPoints = JSON.parse(div.querySelector('input[name="vertices"]').value);
+    socket.emit('input_event', {
+      action: "dragVertices",
+      vertices: dragPoints
+    });
+  }
+
+  function simulateKey(div) {
+    var keycode = div.querySelector('input[name="keycode"]').value;
+    socket.emit('input_event', { "type": "key", "keycode": keycode });
+  }
+
+  function wait(div) {
+    var waitTime = div.querySelector('input[name="time"]').value;
+    socket.emit('input_event', { "type": "wait", "time": waitTime });
+  }
+
+  actionListFuncs.recordClick = recordClick;
+  actionListFuncs.simulateClick = simulateClick;
+  actionListFuncs.recordContDrag = recordContDrag;
+  actionListFuncs.simulateContDrag = simulateContDrag;
+  actionListFuncs.simulateKey = simulateKey;
+  actionListFuncs.wait = wait;
+
+  window.actionListFuncs = actionListFuncs;
 
 
 })();

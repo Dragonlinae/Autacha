@@ -1,5 +1,6 @@
 from enum import Enum
 from helpers.mask_class import Mask
+import helpers.game_interaction as GameInteraction
 import json
 
 
@@ -28,6 +29,7 @@ class Element:
     self.x = data.get("x", self.x)
     self.y = data.get("y", self.y)
     self.name = data.get("name", self.name)
+    self.actions = data.get("actions", self.actions)
 
   def setImage(self, frame):
     self.frame = frame
@@ -40,6 +42,12 @@ class Element:
       with self.mask.read:
         data["mask"] = self.mask.get_data()
     return data
+
+  def simulate(self, win, offset):
+    print(self.actions)
+    for action in self.actions:
+      GameInteraction.input_action(win, action, offset)
+    return {"status": "success"}
 
 
 class State(Element):
