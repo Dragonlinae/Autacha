@@ -104,17 +104,17 @@ class StateTracker:
     }
 
   def setImage(self, id, frame):
-    state = self.get_state(id)
-    if state is not None:
-      state.frame = frame
-      state.image = "/elementimg?id=" + str(state.id)
+    element = self.get_element(id)
+    if element is not None:
+      element.frame = frame
+      element.image = "/elementimg?id=" + str(element.id)
       return True
     return False
 
   def apply_mask(self, id, mask):
-    state = self.get_state(id)
-    if state is not None and mask is not None:
-      state.mask = mask
+    element = self.get_element(id)
+    if element is not None and mask is not None:
+      element.mask = mask
       self.testing_id = id
       return True
     return False
@@ -122,7 +122,7 @@ class StateTracker:
   def get_testing_mask(self):
     if self.testing_id == -1:
       return None
-    return self.get_state(self.testing_id).mask
+    return self.get_element(self.testing_id).mask
 
   def set_testing_id(self, id):
     if id in self.states or id in self.edges:
@@ -133,4 +133,7 @@ class StateTracker:
       return False
 
   def get_element(self, id):
-    return self.get_state(id) or self.get_edge(id)
+    element = self.get_state(id)
+    if element is None:
+      element = self.get_edge(id)
+    return element

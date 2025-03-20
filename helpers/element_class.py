@@ -6,7 +6,7 @@ import json
 
 class Element:
   id_counter = 0
-  passable_data = ["id", "type", "x", "y", "name", "actions"]
+  passable_data = ["id", "type", "x", "y", "name", "actions", "image"]
 
   def __init__(self, data):
     self.id = Element.id_counter
@@ -26,6 +26,7 @@ class Element:
         setattr(self, key, data[key])
 
   def safe_update(self, data):
+    print(data)
     self.x = data.get("x", self.x)
     self.y = data.get("y", self.y)
     self.name = data.get("name", self.name)
@@ -51,7 +52,7 @@ class Element:
 
 
 class State(Element):
-  passable_data = ["width", "height", "image", "borderThickness"]
+  passable_data = ["width", "height", "borderThickness"]
 
   def __init__(self, data):
     super().__init__(data)

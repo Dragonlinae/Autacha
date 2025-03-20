@@ -1,5 +1,6 @@
 {% if head %}
 <link rel="stylesheet" href="/inspector/inspector.css">
+{% include "inspectormask.html" %}
 {% include "inspectorstate.html" %}
 {% include "inspectoredge.html" %}
 {% include "inspectoractionlist.html" %}
@@ -8,6 +9,9 @@
 {% if body %}
 <div id="inspector">
   <h2>Inspector</h2>
+  <div id="inspector-mask" hidden>
+    {% include "inspectormask.html" %}
+  </div>
   <div id="inspector-state" hidden>
     {% include "inspectorstate.html" %}
   </div>
@@ -22,6 +26,7 @@
 
 {% if scripts %}
 <script src="/inspector/inspector.js" type="module"></script>
+{% include "inspectormask.html" %}
 {% include "inspectorstate.html" %}
 {% include "inspectoredge.html" %}
 {% include "inspectoractionlist.html" %}

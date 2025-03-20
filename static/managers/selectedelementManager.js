@@ -3,7 +3,7 @@ import { TempEdgeVisualElement } from "../classes/editorelementsClass.js";
 class ElementSelector {
   constructor() {
     this.selectedElement = null;
-    this.selectCallback = null;
+    this.changeCallback = null;
   }
 
   selectElement(element) {
@@ -13,8 +13,8 @@ class ElementSelector {
     this.deselectElement();
     this.selectedElement = element;
     this.selectedElement.select();
-    if (this.selectCallback) {
-      this.selectCallback(this.selectedElement);
+    if (this.changeCallback) {
+      this.changeCallback(this.selectedElement);
     }
   }
 
@@ -23,14 +23,17 @@ class ElementSelector {
       this.selectedElement.deselect();
       this.selectedElement = null;
     }
+    if (this.changeCallback) {
+      this.changeCallback(this.selectedElement);
+    }
   }
 
   getSelectedElement() {
     return this.selectedElement;
   }
 
-  onSelect(callback) {
-    this.selectCallback = callback;
+  onChange(callback) {
+    this.changeCallback = callback;
   }
 }
 

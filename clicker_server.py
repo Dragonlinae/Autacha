@@ -23,11 +23,13 @@ target = "%A_AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Google Play Gam
 title = "Arknights"
 
 ahk = AHK()
+
+originalwin = ahk.active_window
+
 ahk.run_script(
     f"Run, {target},,hide")
 win = ahk.win_wait(title=title, timeout=5)
 time.sleep(1)
-win.to_bottom()
 print(win)
 print(win.get_position())
 
@@ -50,6 +52,7 @@ for control in win.list_controls():
 app = Flask(__name__, static_url_path="",
             static_folder="static", template_folder="templates")
 socket = SocketIO(app)
+originalwin.activate()
 
 
 def get_thumbnail():
@@ -131,10 +134,10 @@ def all_states():
 def elementimg():
   id = int(request.args.get("id"))
   overlay = request.args.get("overlay", "false")
-  state = stateTracker.get_state(id)
-  if state is not None and state.frame is not None:
-    img = state.frame.frame_buffer
-    mask = state.mask
+  element = stateTracker.get_element(id)
+  if element is not None and element.frame is not None:
+    img = element.frame.frame_buffer
+    mask = element.mask
     if mask.valid() and overlay == "true":
       img = mask.overlay(img, 5, (0, 255, 0))
     img = cv2.imencode(".jpg", img)[1]
@@ -156,13 +159,19 @@ def handle_action_event(data):
 
 @socket.on('state_event')
 def handle_state_event(data):
-  print(data)
   res = stateTracker.update(data)
   if res is not None:
     if isinstance(res, dict):
       socket.emit('state_update', res)
     else:
       socket.emit('state_update', res.get_data())
+
+
+@socket.on('name_event')
+def handle_name_event(data):
+  element = stateTracker.get_element(data["id"])
+  element.name = data["name"]
+  socket.emit('state_update', element.get_data())
 
 
 @socket.on('mask_event')

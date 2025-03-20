@@ -10,6 +10,7 @@ class VisualElement {
       name: "Element",
       actions: [],
       mask: null,
+      image: null,
     };
     Object.assign(this, defaultData, data);
   }
@@ -58,7 +59,6 @@ class StateVisualElement extends VisualElement {
       height: 50,
       borderThickness: 10,
       name: "State",
-      image: null,
       imageElement: null,
     };
     super(Object.assign({}, defaultData, data));
@@ -77,10 +77,12 @@ class StateVisualElement extends VisualElement {
       img.onload = () => {
         this.imageElement = img;
         document.getElementById("inspector-state").update();
+        document.getElementById("inspector-mask").update();
       };
       img.src = data.image + "&" + new Date().getTime();
     } else {
       document.getElementById("inspector-state").update();
+      document.getElementById("inspector-mask").update();
     }
   }
   draw(ctx) {
@@ -132,6 +134,7 @@ class EdgeVisualElement extends VisualElement {
   update(data) {
     super.update(data);
     document.getElementById("inspector-edge").update();
+    document.getElementById("inspector-mask").update();
   }
   draw(ctx) {
     var sourceX = this.sourceState.x + this.sourceState.width / 2;
