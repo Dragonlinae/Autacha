@@ -1,12 +1,13 @@
-from enum import Enum
 from helpers.mask_class import Mask
 import helpers.game_interaction as GameInteraction
+import helpers.execenv as execenv
 import json
 
 
 class Element:
   id_counter = 0
-  passable_data = ["id", "type", "x", "y", "name", "actions", "image"]
+  passable_data = ["id", "type", "x", "y",
+                   "name", "actions", "additionalcond", "image"]
 
   def __init__(self, data):
     self.id = Element.id_counter
@@ -16,6 +17,7 @@ class Element:
     self.name = data.get("name", "Element " + str(self.id))
     self.actions = data.get("actions", [])
     self.mask = Mask()
+    self.additionalcond = ""
     self.frame = data.get("frame", None)
     self.image = data.get("image", None)
     Element.id_counter += 1
@@ -26,7 +28,6 @@ class Element:
         setattr(self, key, data[key])
 
   def safe_update(self, data):
-    print(data)
     self.x = data.get("x", self.x)
     self.y = data.get("y", self.y)
     self.name = data.get("name", self.name)
@@ -44,8 +45,11 @@ class Element:
         data["mask"] = self.mask.get_data()
     return data
 
+  def check_condition(self, img):
+    if self.mask:
+      return self.mask.check_condition(img) and execenv.evaluate(self.additionalcond)
+
   def simulate(self, win, offset):
-    print(self.actions)
     for action in self.actions:
       GameInteraction.input_action(win, action, offset)
     return {"status": "success"}

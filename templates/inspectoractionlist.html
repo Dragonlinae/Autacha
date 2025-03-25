@@ -110,6 +110,14 @@
     Wait</button>
 </template>
 
+<template id="action-exec-params-template">
+  <label>Command:
+    <textarea name="command" placeholder="Please no malicious :3" rows="1"></textarea>
+  </label>
+  <button class="simulate" name="simulate-exec" onclick="actionListFuncs.exec(this.parentElement)">Simulate
+    Command</button>
+</template>
+
 {% endif %}
 
 {% if scripts %}

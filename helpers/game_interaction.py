@@ -1,6 +1,7 @@
 import helpers.mouse_inputs as mouse_inputs
 import helpers.keyboard_inputs as keyboard_inputs
 import time
+import helpers.execenv as execenv
 
 
 def input_action(win, data, offset=(0, 0)):
@@ -68,6 +69,10 @@ def input_action(win, data, offset=(0, 0)):
       waittime = data["time"]
       time.sleep(int(waittime)/1000.0)
       return {"status": "success"}
+
+    case "exec":
+      execenv.execute(data["cmd"], mouse_inputs=mouse_inputs,
+                      keyboard_inputs=keyboard_inputs)
 
     case _:
       return {"status": "error", "message": "Invalid action"}

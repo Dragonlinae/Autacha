@@ -10,6 +10,7 @@ class VisualElement {
       name: "Element",
       actions: [],
       mask: null,
+      additionalcond: "",
       image: null,
     };
     Object.assign(this, defaultData, data);

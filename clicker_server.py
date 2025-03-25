@@ -206,10 +206,19 @@ def handle_mask_event(data):
     socket.emit('state_update', element.get_data())
 
 
+@socket.on('additional_cond_event')
+def handle_additional_cond_event(data):
+  element = stateTracker.get_element(data["id"])
+  if element is not None:
+    match data["action"]:
+      case "set":
+        element.additionalcond = data["cond"]
+        socket.emit('state_update', element.get_data())
+        return {"status": "success"}
+
+
 @socket.on('action_list_event')
 def handle_action_list_event(data):
-  print(data)
-  print(json.dumps(data))
   element = stateTracker.get_element(data["id"])
   if element is not None:
     match data["action"]:

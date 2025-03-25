@@ -15,7 +15,8 @@ import socket from "../managers/socketManager.js";
     "click": "Click",
     "dragVertices": "Continuous Drag",
     "key": "Key",
-    "wait": "Wait"
+    "wait": "Wait",
+    "exec": "Execute",
   }
 
   var paramTemplates = {
@@ -24,6 +25,7 @@ import socket from "../managers/socketManager.js";
     "dragVertices": document.getElementById("action-cont-drag-params-template"),
     "key": document.getElementById("action-key-params-template"),
     "wait": document.getElementById("action-wait-params-template"),
+    "exec": document.getElementById("action-exec-params-template"),
   };
 
   for (const key of Object.keys(paramTemplates)) {
@@ -79,7 +81,7 @@ import socket from "../managers/socketManager.js";
         var labels = element.querySelector(".action-params").querySelectorAll("label");
         for (let i = 0; i < labels.length; i++) {
           console.log(labels[i]);
-          var input = labels[i].querySelector("input") || labels[i].querySelector("select");
+          var input = labels[i].querySelector("input") || labels[i].querySelector("select") || labels[i].querySelector("textarea");
           console.log(input);
           if (input.name in action) {
             if (input.name == "vertices") {
@@ -97,7 +99,7 @@ import socket from "../managers/socketManager.js";
   function createActionElement(action) {
     var element = elementTemplate.content.cloneNode(true).children[0];
     element.actionType = action;
-    element.querySelector(".action-type").textContent = action;
+    element.querySelector(".action-type").textContent = friendlynaminator9000[action];
     element.querySelector(".action-params").append(paramTemplates[action].content.cloneNode(true));
     element.querySelector(".delete-action").addEventListener("click", function () {
       element.remove();
@@ -111,7 +113,7 @@ import socket from "../managers/socketManager.js";
       var labels = element.querySelector(".action-params").querySelectorAll("label");
       for (let i = 0; i < labels.length; i++) {
         console.log(labels[i]);
-        var input = labels[i].querySelector("input") || labels[i].querySelector("select");
+        var input = labels[i].querySelector("input") || labels[i].querySelector("select") || labels[i].querySelector("textarea");
         console.log(input);
         if (input.name == "vertices") {
           actionSave[input.name] = JSON.parse(input.value);
@@ -275,12 +277,18 @@ import socket from "../managers/socketManager.js";
     socket.emit('input_event', { "type": "wait", "time": waitTime });
   }
 
+  function exec(div) {
+    var command = div.querySelector('textarea[name="command"]').value;
+    socket.emit('input_event', { "type": "exec", "cmd": command })
+  }
+
   actionListFuncs.recordClick = recordClick;
   actionListFuncs.simulateClick = simulateClick;
   actionListFuncs.recordContDrag = recordContDrag;
   actionListFuncs.simulateContDrag = simulateContDrag;
   actionListFuncs.simulateKey = simulateKey;
   actionListFuncs.wait = wait;
+  actionListFuncs.exec = exec;
 
   window.actionListFuncs = actionListFuncs;
 

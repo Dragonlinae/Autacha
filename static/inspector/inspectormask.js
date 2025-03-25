@@ -79,6 +79,11 @@ import socket from "../managers/socketManager.js";
     socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType.value, condition: ocrCondition.value, target: ocrConditionValue.value });
   });
 
+  var additionalCondition = document.getElementById("custom-condition");
+  additionalCondition.addEventListener("change", function (event) {
+    socket.emit("additional_cond_event", { id: selectedElement.getSelectedElement().getId(), action: "set", cond: event.target.value });
+  });
+
   var inspectorMaskDiv = document.getElementById("inspector-mask");
   var frameImg = document.getElementById("inspector-frame");
   inspectorMaskDiv.update = function () {
@@ -99,7 +104,7 @@ import socket from "../managers/socketManager.js";
       ocrType.value = selectedElement.getSelectedElement().mask.ocr_type;
       ocrCondition.value = selectedElement.getSelectedElement().mask.ocr_condition;
       ocrConditionValue.value = selectedElement.getSelectedElement().mask.ocr_target;
-
+      additionalCondition.value = selectedElement.getSelectedElement().additionalcond;
 
       if (maskTypeSelector.value === "similarity") {
         maskTypeSimilarity.hidden = false;

@@ -142,6 +142,17 @@ class Mask:
 
     return overlay
 
+  def check_condition(self, img):
+    with self.read:
+      if self.valid():
+        match self.detection_type:
+          case "similarity":
+            similarity_score = self.similarity(img)
+            return similarity_score > self.similarity_threshold
+          case "ocr":
+            ocr_text = self.ocr(img)
+            return self.ocr_check_condition(ocr_text)
+
   def get_data(self):
     data = {key: getattr(self, key)
             for key in Mask.passable_data if hasattr(self, key)}
