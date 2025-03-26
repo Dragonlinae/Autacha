@@ -10,7 +10,7 @@ from helpers.rwlock import RWLock
 
 class Mask:
 
-  passable_data = ["detection_type", "similarity_threshold",
+  passable_data = ["detection_type", "similarity_threshold", "findsimilarity_threshold",
                    "ocr_threshold", "ocr_type", "ocr_condition", "ocr_target"]
 
   def __init__(self):
@@ -19,6 +19,10 @@ class Mask:
     self.offset = (0, 0)
     self.detection_type = "similarity"
     self.similarity_threshold = 0.9
+    self.findsimilarity_threshold = 0.9
+    self.findsimilarity_lock = Lock()
+    self.findsimilarity_score = 0
+    self.findsimilarity_loc = (0, 0)
     self.ocr_threshold = 0.0
     self.ocr_type = "string"
     self.ocr_condition = "equals"
@@ -40,13 +44,13 @@ class Mask:
     return mask
 
   def clear_mask(self):
-    with self.lock.write:
+    with self.write:
       self.mask = ndarray((0, 0, 4))
       self.dimensions = (0, 0)
       self.offset = (0, 0)
 
   def update_mask(self, mask, offset):
-    with self.lock.write:
+    with self.write:
       self.mask = mask
       self.dimensions = mask.shape[:2]
       self.offset = offset
@@ -62,8 +66,25 @@ class Mask:
     mse /= float(self.dimensions[0] * self.dimensions[1] * 3)
     return 1 - np.sqrt(mse) / 255.0
 
+  def findsimilarity_thread(self, frame):
+    with self.read:
+      try:
+        res = cv2.matchTemplate(frame, self.mask, cv2.TM_CCOEFF_NORMED)
+        min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+        self.findsimilarity_score = max_val
+        self.findsimilarity_loc = max_loc
+      finally:
+        self.findsimilarity_lock.release()
+        return self.findsimilarity_score, self.findsimilarity_loc
+
+  def findsimilarity(self, frame):
+    if self.findsimilarity_lock.acquire(blocking=False):
+      Thread(target=self.findsimilarity_thread, args=[frame]).start()
+
+    return self.findsimilarity_score, self.findsimilarity_loc
+
   def ocr_thread(self, frame):
-    with self.lock.read:
+    with self.read:
       try:
         with PyTessBaseAPI(path='./tessdata') as api:
           comp_area = frame[self.offset[1]:self.offset[1] + self.dimensions[0],
@@ -76,6 +97,7 @@ class Mask:
           self.ocr_last_read = ' '.join(res)
       finally:
         self.ocr_lock.release()
+        return self.ocr_last_read
 
   def ocr(self, frame):
     if self.ocr_lock.acquire(blocking=False):
@@ -124,7 +146,7 @@ class Mask:
     except:
       return False
 
-  def overlay(self, frame, borderThickness=0, borderColor=(0, 0, 0), text=""):
+  def overlay(self, frame, borderThickness=0, borderColor=(0, 0, 0), text="", offset=None):
     overlay = frame.copy()
     if self.detection_type == "similarity":
       overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
@@ -132,13 +154,23 @@ class Mask:
                   self.mask, 0.5, overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
                                           self.offset[0]:self.offset[0] + self.dimensions[1]], 0.5, 0)
 
+    if self.detection_type == "findsimilarity":
+      overlay[offset[1]:offset[1] + self.dimensions[0],
+              offset[0]:offset[0] + self.dimensions[1]] = cv2.addWeighted(
+                  self.mask, 0.5, overlay[offset[1]:offset[1] + self.dimensions[0],
+                                          offset[0]:offset[0] + self.dimensions[1]], 0.5, 0)
+
+    if borderThickness > 0:
+      if self.detection_type == "findsimilarity":
+        cv2.rectangle(overlay, (offset[0], offset[1]), (offset[0] + self.dimensions[1], offset[1] + self.dimensions[0]),
+                      borderColor, borderThickness)
+      else:
+        cv2.rectangle(overlay, (self.offset[0], self.offset[1]), (self.offset[0] + self.dimensions[1], self.offset[1] + self.dimensions[0]),
+                      borderColor, borderThickness)
+
     if text != "":
       cv2.putText(overlay, text, (30, 30),
                   cv2.FONT_HERSHEY_COMPLEX, 1, borderColor, 2)
-
-    if borderThickness > 0:
-      cv2.rectangle(overlay, (self.offset[0], self.offset[1]), (self.offset[0] + self.dimensions[1], self.offset[1] + self.dimensions[0]),
-                    borderColor, borderThickness)
 
     return overlay
 
@@ -150,13 +182,25 @@ class Mask:
             similarity_score = self.similarity(img)
             return similarity_score > self.similarity_threshold
           case "ocr":
-            ocr_text = self.ocr(img)
+            ocr_text = self.ocr_thread(img)
             return self.ocr_check_condition(ocr_text)
+          case "findsimilarity":
+            similarity_score, position = self.findsimilarity_thread(img)
+            return similarity_score > self.findsimilarity_threshold
+
+  def get_detect_loc(self):
+    with self.read:
+      match self.detection_type:
+        case "findsimilarity":
+          return (self.findsimilarity_loc[0] + self.dimensions[1]/2, self.findsimilarity_loc[1] + self.dimensions[0]/2)
+        case _:
+          return (self.offset[0] + self.dimensions[1]/2, self.offset[1] + self.dimensions[0]/2)
 
   def get_data(self):
-    data = {key: getattr(self, key)
-            for key in Mask.passable_data if hasattr(self, key)}
-    return data
+    with self.read:
+      data = {key: getattr(self, key)
+              for key in Mask.passable_data if hasattr(self, key)}
+      return data
 
   class ReadContext:
     def __init__(self, rwlock):

@@ -4,7 +4,7 @@ import time
 import helpers.execenv as execenv
 
 
-def input_action(win, data, offset=(0, 0)):
+def input_action(win, data, offset=(0, 0), element=None):
   action = data["type"]
   match action:
     case "click":
@@ -64,6 +64,10 @@ def input_action(win, data, offset=(0, 0)):
       key = data["keycode"]
       keyboard_inputs.key(win, key)
       return {"status": "success"}
+
+    case "clickDetect":
+      if element:
+        mouse_inputs.click_mouse(win, element.mask.get_detect_loc(), offset)
 
     case "wait":
       waittime = data["time"]

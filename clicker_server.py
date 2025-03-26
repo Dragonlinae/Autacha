@@ -106,6 +106,14 @@ def stream_frames():
                 img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
               else:
                 img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
+            case "findsimilarity":
+              similarity_score, position = mask.findsimilarity(img)
+              if similarity_score > mask.findsimilarity_threshold:
+                img = mask.overlay(img, 5, (0, 255, 0),
+                                   str(similarity_score), position)
+              else:
+                img = mask.overlay(img, 5, (0, 0, 255),
+                                   str(similarity_score), position)
 
     img = cv2.imencode(".jpg", img)[1]
 
@@ -139,7 +147,7 @@ def elementimg():
     img = element.frame.frame_buffer
     mask = element.mask
     if mask.valid() and overlay == "true":
-      img = mask.overlay(img, 5, (0, 255, 0))
+      img = mask.overlay(img, 5, (0, 255, 0), offset=mask.offset)
     img = cv2.imencode(".jpg", img)[1]
     return Response(img.tobytes(), mimetype='image/jpeg')
   return ""
@@ -147,7 +155,8 @@ def elementimg():
 
 @socket.on('input_event')
 def handle_action_event(data):
-  return GameInteraction.input_action(win, data, offset)
+  element = stateTracker.get_element(data["id"]) if "id" in data else None
+  return GameInteraction.input_action(win, data, offset, element)
 
 
 @socket.on('simulate_event')
@@ -196,6 +205,9 @@ def handle_mask_event(data):
       case "set_similarity":
         element.mask.detection_type = "similarity"
         element.mask.similarity_threshold = float(data["threshold"])
+      case "set_findsimilarity":
+        element.mask.detection_type = "findsimilarity"
+        element.mask.findsimilarity_threshold = float(data["threshold"])
       case "set_ocr":
         element.mask.detection_type = "ocr"
         element.mask.ocr_threshold = float(data["threshold"])

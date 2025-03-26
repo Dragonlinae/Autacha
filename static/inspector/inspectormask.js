@@ -22,9 +22,12 @@ import socket from "../managers/socketManager.js";
 
   var maskTypeSelector = document.getElementById("inspector-mask-type");
   var maskTypeSimilarity = document.getElementById("inspector-mask-similarity");
+  var maskTypeFindSimilarity = document.getElementById("inspector-mask-findsimilarity");
   var maskTypeOCR = document.getElementById("inspector-mask-ocr");
 
   var similaritySlider = document.getElementById("inspector-mask-similarity-slider");
+
+  var findsimilaritySlider = document.getElementById("inspector-mask-findsimilarity-slider");
 
   var ocrSlider = document.getElementById("inspector-mask-ocr-slider");
   var ocrType = document.getElementById("inspector-mask-ocr-typecast");
@@ -41,11 +44,18 @@ import socket from "../managers/socketManager.js";
     if (maskTypeSelector.value === "similarity") {
       maskTypeSimilarity.hidden = false;
       maskTypeOCR.hidden = true;
+      maskTypeFindSimilarity.hidden = true;
       socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_similarity", threshold: similaritySlider.value });
     } else if (maskTypeSelector.value === "ocr") {
       maskTypeSimilarity.hidden = true;
       maskTypeOCR.hidden = false;
+      maskTypeFindSimilarity.hidden = true;
       socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_ocr", threshold: ocrSlider.value, type: ocrType.value, condition: ocrCondition.value, target: ocrConditionValue.value });
+    } else if (maskTypeSelector.value === "findsimilarity") {
+      maskTypeSimilarity.hidden = true;
+      maskTypeOCR.hidden = true;
+      maskTypeFindSimilarity.hidden = false;
+      socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_findsimilarity", threshold: findsimilaritySlider.value });
     }
   });
 
@@ -56,6 +66,15 @@ import socket from "../managers/socketManager.js";
   similaritySlider.addEventListener("change", function () {
     similarityValue.textContent = similaritySlider.value;
     socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_similarity", threshold: similaritySlider.value });
+  });
+
+  var findsimilarityValue = document.getElementById("inspector-mask-findsimilarity-value");
+  findsimilaritySlider.addEventListener("input", function () {
+    findsimilarityValue.textContent = findsimilaritySlider.value;
+  });
+  findsimilaritySlider.addEventListener("change", function () {
+    findsimilarityValue.textContent = findsimilaritySlider.value;
+    socket.emit("mask_event", { id: selectedElement.getSelectedElement().getId(), action: "set_findsimilarity", threshold: findsimilaritySlider.value });
   });
 
   var ocrValue = document.getElementById("inspector-mask-ocr-value");
@@ -100,6 +119,7 @@ import socket from "../managers/socketManager.js";
     if (selectedElement.getSelectedElement().mask) {
       maskTypeSelector.value = selectedElement.getSelectedElement().mask.detection_type;
       similaritySlider.value = selectedElement.getSelectedElement().mask.similarity_threshold;
+      findsimilaritySlider.value = selectedElement.getSelectedElement().mask.findsimilarity_threshold;
       ocrSlider.value = selectedElement.getSelectedElement().mask.ocr_threshold;
       ocrType.value = selectedElement.getSelectedElement().mask.ocr_type;
       ocrCondition.value = selectedElement.getSelectedElement().mask.ocr_condition;
@@ -108,9 +128,15 @@ import socket from "../managers/socketManager.js";
 
       if (maskTypeSelector.value === "similarity") {
         maskTypeSimilarity.hidden = false;
+        maskTypeFindSimilarity.hidden = true;
+        maskTypeOCR.hidden = true;
+      } else if (maskTypeSelector.value === "findsimilarity") {
+        maskTypeSimilarity.hidden = true;
+        maskTypeFindSimilarity.hidden = false;
         maskTypeOCR.hidden = true;
       } else if (maskTypeSelector.value === "ocr") {
         maskTypeSimilarity.hidden = true;
+        maskTypeFindSimilarity.hidden = true;
         maskTypeOCR.hidden = false;
       }
 

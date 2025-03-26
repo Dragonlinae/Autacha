@@ -102,6 +102,12 @@
     Key</button>
 </template>
 
+<template id="action-click-detect-params-template">
+  <button class="simulate" name="simulate-click-detect"
+    onclick="actionListFuncs.simulateClickDetect(this.parentElement)">Simulate
+    Click Detect</button>
+</template>
+
 <template id="action-wait-params-template">
   <label>Time (ms):
     <input type="number" name="time" value="0" min="0" step="1">

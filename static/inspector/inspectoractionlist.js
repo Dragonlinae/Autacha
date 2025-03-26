@@ -15,6 +15,7 @@ import socket from "../managers/socketManager.js";
     "click": "Click",
     "dragVertices": "Continuous Drag",
     "key": "Key",
+    "clickDetect": "Click Detected Region",
     "wait": "Wait",
     "exec": "Execute",
   }
@@ -24,6 +25,7 @@ import socket from "../managers/socketManager.js";
     // "Drag": document.getElementById("action-drag-params-template"),
     "dragVertices": document.getElementById("action-cont-drag-params-template"),
     "key": document.getElementById("action-key-params-template"),
+    "clickDetect": document.getElementById("action-click-detect-params-template"),
     "wait": document.getElementById("action-wait-params-template"),
     "exec": document.getElementById("action-exec-params-template"),
   };
@@ -269,17 +271,29 @@ import socket from "../managers/socketManager.js";
 
   function simulateKey(div) {
     var keycode = div.querySelector('input[name="keycode"]').value;
-    socket.emit('input_event', { "type": "key", "keycode": keycode });
+    socket.emit('input_event', {
+      "type": "key", "keycode": keycode
+    });
+  }
+
+  function simulateClickDetect(div) {
+    socket.emit('input_event', {
+      id: selectedElement.getSelectedElement().getId(), "type": "clickDetect"
+    });
   }
 
   function wait(div) {
     var waitTime = div.querySelector('input[name="time"]').value;
-    socket.emit('input_event', { "type": "wait", "time": waitTime });
+    socket.emit('input_event', {
+      "type": "wait", "time": waitTime
+    });
   }
 
   function exec(div) {
     var command = div.querySelector('textarea[name="command"]').value;
-    socket.emit('input_event', { "type": "exec", "cmd": command })
+    socket.emit('input_event', {
+      "type": "exec", "cmd": command
+    })
   }
 
   actionListFuncs.recordClick = recordClick;
@@ -287,6 +301,7 @@ import socket from "../managers/socketManager.js";
   actionListFuncs.recordContDrag = recordContDrag;
   actionListFuncs.simulateContDrag = simulateContDrag;
   actionListFuncs.simulateKey = simulateKey;
+  actionListFuncs.simulateClickDetect = simulateClickDetect;
   actionListFuncs.wait = wait;
   actionListFuncs.exec = exec;
 
