@@ -116,6 +116,39 @@
     Wait</button>
 </template>
 
+<template id="action-launch-params-template">
+  <label>Game Path:
+    <input type="text" name="path"
+      placeholder='A_AppData "/Microsoft/Windows/Start Menu/Programs/Google Play Games/Arknights.lnk"'></input>
+  </label>
+  <button class="simulate" name="simulate-launch" onclick="actionListFuncs.launch(this.parentElement)">Simulate
+    Launch</button>
+</template>
+
+<template id="action-close-params-template">
+  <button class="simulate" name="simulate-close" onclick="actionListFuncs.close(this.parentElement)">Simulate
+    Close</button>
+</template>
+
+<template id="action-input-hook-params-template">
+  <label>Game Title:
+    <input type="text" name="title" placeholder='Arknights'></input>
+  </label>
+  <label>Timeout (s):
+    <input type="number" name="timeout" value="5"></input>
+  </label>
+  <button class="simulate" name="simulate-input-hook" onclick="actionListFuncs.inputHook(this.parentElement)">Simulate
+    Input Hook</button>
+</template>
+
+<template id="action-video-hook-params-template">
+  <label>Game Title:
+    <input type="text" name="title" placeholder='Arknights'></input>
+  </label>
+  <button class="simulate" name="simulate-video-hook" onclick="actionListFuncs.videoHook(this.parentElement)">Simulate
+    Video Hook</button>
+</template>
+
 <template id="action-exec-params-template">
   <label>Command:
     <textarea name="command" placeholder="Please no malicious :3" rows="1"></textarea>

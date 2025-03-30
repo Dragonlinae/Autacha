@@ -137,3 +137,8 @@ class StateTracker:
     if element is None:
       element = self.get_edge(id)
     return element
+
+  def get_save(self):
+    save = {"states": [state.get_save for state in self.states],
+            "edges": [edge.get_save for edge in self.edges]}
+    return save

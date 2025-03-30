@@ -18,6 +18,10 @@ import socket from "../managers/socketManager.js";
     "clickDetect": "Click Detected Region",
     "wait": "Wait",
     "exec": "Execute",
+    "launch": "Launch Program",
+    "close": "Close Program",
+    "hookInputs": "Hook Inputs",
+    "hookVideo": "Hook Video",
   }
 
   var paramTemplates = {
@@ -28,6 +32,10 @@ import socket from "../managers/socketManager.js";
     "clickDetect": document.getElementById("action-click-detect-params-template"),
     "wait": document.getElementById("action-wait-params-template"),
     "exec": document.getElementById("action-exec-params-template"),
+    "launch": document.getElementById("action-launch-params-template"),
+    "close": document.getElementById("action-close-params-template"),
+    "hookInputs": document.getElementById("action-input-hook-params-template"),
+    "hookVideo": document.getElementById("action-video-hook-params-template"),
   };
 
   for (const key of Object.keys(paramTemplates)) {
@@ -264,8 +272,8 @@ import socket from "../managers/socketManager.js";
   function simulateContDrag(div) {
     var dragPoints = JSON.parse(div.querySelector('input[name="vertices"]').value);
     socket.emit('input_event', {
-      action: "dragVertices",
-      vertices: dragPoints
+      "type": "dragVertices",
+      "vertices": dragPoints
     });
   }
 
@@ -278,7 +286,7 @@ import socket from "../managers/socketManager.js";
 
   function simulateClickDetect(div) {
     socket.emit('input_event', {
-      id: selectedElement.getSelectedElement().getId(), "type": "clickDetect"
+      "id": selectedElement.getSelectedElement().getId(), "type": "clickDetect"
     });
   }
 
@@ -292,8 +300,28 @@ import socket from "../managers/socketManager.js";
   function exec(div) {
     var command = div.querySelector('textarea[name="command"]').value;
     socket.emit('input_event', {
-      "type": "exec", "cmd": command
+      "id": selectedElement.getSelectedElement().getId(), "type": "exec", "cmd": command
     })
+  }
+
+  function launch(div) {
+    var path = div.querySelector('input[name="path"]').value;
+    socket.emit('input_event', { "type": "launch", "path": path })
+  }
+
+  function close(div) {
+    socket.emit('input_event', { "type": "close" })
+  }
+
+  function inputHook(div) {
+    var title = div.querySelector('input[name="title"]').value;
+    var timeout = div.querySelector('input[name="timeout"]').value;
+    socket.emit('input_event', { "type": "hookInputs", "title": title, "timeout": timeout })
+  }
+
+  function videoHook(div) {
+    var title = div.querySelector('input[name="title"]').value;
+    socket.emit('input_event', { "type": "hookVideo", "title": title })
   }
 
   actionListFuncs.recordClick = recordClick;
@@ -304,6 +332,10 @@ import socket from "../managers/socketManager.js";
   actionListFuncs.simulateClickDetect = simulateClickDetect;
   actionListFuncs.wait = wait;
   actionListFuncs.exec = exec;
+  actionListFuncs.launch = launch;
+  actionListFuncs.close = close;
+  actionListFuncs.inputHook = inputHook;
+  actionListFuncs.videoHook = videoHook;
 
   window.actionListFuncs = actionListFuncs;
 

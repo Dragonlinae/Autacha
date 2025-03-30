@@ -1,7 +1,7 @@
-from helpers.game_capture import GameCapture
-import helpers.game_interaction as GameInteraction
+from helpers.game_interaction import GameInteraction
 from helpers.state_tracker import StateTracker
 from helpers.mask_class import Mask
+from helpers.element_class import Element
 import time
 import cv2
 import numpy as np
@@ -10,53 +10,40 @@ from flask import Flask, Response, render_template, request
 from flask_socketio import SocketIO
 import json
 import base64
+import ctypes
+import pickle
 
-offset = (0, 0)
 
-stream_max_dimension = 1280
-thumbnail_max_dimension = 256
+def is_admin():
+  try:
+    return ctypes.windll.shell32.IsUserAnAdmin()
+  except:
+    return False
+
+
+if not is_admin():
+  print("Currently running without elevated privileges. Run as administrator for best results.")
+
+# stream_max_dimension = 1280
+# thumbnail_max_dimension = 256
 
 stateTracker = StateTracker()
+gameInteraction = GameInteraction()
 
 
-target = "%A_AppData%\\Microsoft\\Windows\\Start Menu\\Programs\\Google Play Games\\Arknights.lnk"
-title = "Arknights"
+# target = 'A_AppData "/Microsoft/Windows/Start Menu/Programs/Google Play Games/Arknights.lnk"'
+# target_title = "Arknights"
 
-ahk = AHK()
-
-originalwin = ahk.active_window
-
-ahk.run_script(
-    f"Run, {target},,hide")
-win = ahk.win_wait(title=title, timeout=5)
-time.sleep(1)
-print(win)
-print(win.get_position())
-
-camera = GameCapture(title)
-camera.start()
-while camera.get_last_frame() is None:
-  time.sleep(0.1)
-
-print("Capture Started")
-
-frame = camera.get_last_frame()
-print(frame.width, frame.height)
-for control in win.list_controls():
-  print(control)
-  print(control.get_position())
-  if abs(control.get_position().width - frame.width) < 10 and abs(control.get_position().height - frame.height) < 10:
-    offset = (control.get_position().x, control.get_position().y)
-    print("Offset applied", offset)
 
 app = Flask(__name__, static_url_path="",
             static_folder="static", template_folder="templates")
 socket = SocketIO(app)
-originalwin.activate()
 
 
 def get_thumbnail():
-  frame = camera.get_last_frame()
+  if gameInteraction.camera is None:
+    return None
+  frame = gameInteraction.get_last_frame()
   img_encoded = cv2.imencode(".jpg", frame.frame_buffer)[1]
   # img = cv2.imdecode(img_encoded, cv2.IMREAD_COLOR)
   # h, w = img.shape[:2]
@@ -72,12 +59,27 @@ def get_thumbnail():
 
 
 def stream_frames():
+
+  img = cv2.imread("image.png")
+  img = cv2.imencode(".jpg", img)[1]
+  stringData = img.tobytes()
+  yield (b'--frame\r\n'
+         b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n'
+         # Send frame twice to get an ending boundary
+         b'--frame\r\n'
+         b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n')
+
   frame_number = -1
   while True:
-    if (frame_number == camera.frame_number):
+    if (frame_number == gameInteraction.get_frame_number()):
       time.sleep(0.01)
+      # yield (b'--frame\r\n'
+      #        b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n')
       continue
-    frame_number = camera.frame_number
+    frame_number = gameInteraction.get_frame_number()
+    frame = gameInteraction.get_last_frame()
+    if (frame is None):
+      continue
     # img = frame.frame_buffer
     # h, w = img.shape[:2]
     # if h > w:
@@ -88,7 +90,7 @@ def stream_frames():
     #       img, (stream_max_dimension, int(h * stream_max_dimension / w)))
     # img = cv2.imencode(".png", img)[1]
 
-    img = camera.get_last_frame().frame_buffer
+    img = frame.frame_buffer
     mask = stateTracker.get_testing_mask()
     if mask:
       with mask.read:
@@ -153,17 +155,30 @@ def elementimg():
   return ""
 
 
+@app.route("/exportSave", methods=["GET"])
+def export_save():
+  savefile = pickle.dumps([Element.id_counter, stateTracker])
+  return savefile
+
+
+@app.route("/importSave", methods=["POST"])
+def import_save():
+  global stateTracker
+  Element.id_counter, stateTracker = pickle.loads(request.data)
+  return "Save imported successfully!"
+
+
 @socket.on('input_event')
 def handle_action_event(data):
   element = stateTracker.get_element(data["id"]) if "id" in data else None
-  return GameInteraction.input_action(win, data, offset, element)
+  return gameInteraction.input_action(data, element)
 
 
 @socket.on('simulate_event')
 def handle_action_event(data):
   element = stateTracker.get_element(data["id"])
   if element is not None:
-    return element.simulate(win, offset)
+    return element.simulate()
 
 
 @socket.on('state_event')
@@ -185,19 +200,21 @@ def handle_name_event(data):
 
 @socket.on('mask_event')
 def handle_mask_event(data):
+  if gameInteraction.camera is None:
+    return None
   element = stateTracker.get_element(data["id"])
   if element is not None:
     match data["action"]:
       case "set":
         if data["width"] != 0 and data["height"] != 0:
-          stateTracker.setImage(element.id, camera.get_last_frame())
+          stateTracker.setImage(element.id, gameInteraction.get_last_frame())
           element.mask.update_mask(Mask.crop_from_frame(
               element.frame.frame_buffer, {"x": data["x"], "y": data["y"], "width": data["width"], "height": data["height"]}), (int(data["x"]), int(data["y"])))
           stateTracker.set_testing_id(data["id"])
       case "clear":
         element.mask.clear_mask()
       case "update_frame":
-        stateTracker.setImage(data["id"], camera.get_last_frame())
+        stateTracker.setImage(data["id"], gameInteraction.get_last_frame())
         if element.mask.valid():
           element.mask.update_mask(Mask.crop_from_frame(
               element.frame.frame_buffer, {"x": element.mask.offset[0], "y": element.mask.offset[1],

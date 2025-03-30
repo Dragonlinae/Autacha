@@ -231,3 +231,16 @@ class Mask:
   @property
   def write(self):
     return self.WriteContext(self.lock)
+
+  def __getstate__(self):
+    state = self.__dict__.copy()
+    del state["lock"]
+    del state["ocr_lock"]
+    del state["findsimilarity_lock"]
+    return state
+
+  def __setstate__(self, state):
+    self.__dict__.update(state)
+    self.findsimilarity_lock = Lock()
+    self.ocr_lock = Lock()
+    self.lock = RWLock()

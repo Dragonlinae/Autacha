@@ -18,7 +18,7 @@ class Element:
     self.actions = data.get("actions", [])
     self.mask = Mask()
     self.additionalcond = ""
-    self.frame = data.get("frame", None)
+    self.framebuffer = data.get("framebuffer", None)
     self.image = data.get("image", None)
     Element.id_counter += 1
 
@@ -47,11 +47,11 @@ class Element:
 
   def check_condition(self, img):
     if self.mask:
-      return self.mask.check_condition(img) and execenv.evaluate(self.additionalcond)
+      return self.mask.check_condition(img) and execenv.evaluate(self.additionalcond, element=self, img=img)
 
-  def simulate(self, win, offset):
+  def simulate(self):
     for action in self.actions:
-      GameInteraction.input_action(win, action, offset)
+      GameInteraction.input_action(action, self)
     return {"status": "success"}
 
 
@@ -103,7 +103,7 @@ class State(Element):
 
 class Edge(Element):
   passable_data = ["sourceStateId",
-                   "targetStateId", "lineThickness", "repeats"]
+                   "targetStateId", "lineThickness"]
 
   def __init__(self, data):
     super().__init__(data)
@@ -112,7 +112,6 @@ class Edge(Element):
     self.targetStateId = data.get("targetStateId", None)
     self.lineThickness = data.get("lineThickness", 2)
     self.name = data.get("name", "Edge " + str(self.id))
-    self.repeats = data.get("repeats", -1)
 
   def update(self, data):
     super().update(data)

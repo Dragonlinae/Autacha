@@ -36,4 +36,52 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
     }
   }
   selectedElement.onChange(updateInspector);
+
+
+  var saveFileButton = document.getElementById("save-file");
+  var loadFileButton = document.getElementById("load-file");
+  var fileInput = document.getElementById("file-input");
+
+  saveFileButton.addEventListener("click", function () {
+    fetch("/exportSave", {
+      method: "GET",
+    })
+      .then(response => response.blob())
+      .then(blob => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "savefile.autacha";
+        link.click();
+      })
+      .catch(error => console.error("Error saving file:", error));
+  });
+
+  loadFileButton.addEventListener("click", function () {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener("change", function (event) {
+    var file = event.target.files[0];
+    if (file) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        var fileContent = e.target.result;
+        fetch("/importSave", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/octet-stream",
+          },
+          body: fileContent,
+        })
+          .then(response => response.text())
+          .then(responseText => {
+            console.log("Save imported successfully:", responseText);
+            location.reload()
+          })
+          .catch(error => console.error("Error importing file:", error));
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  });
+
 })();
