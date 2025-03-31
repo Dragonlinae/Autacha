@@ -12,6 +12,7 @@ import json
 import base64
 import ctypes
 import pickle
+from functools import cmp_to_key
 
 
 def is_admin():
@@ -92,30 +93,28 @@ def stream_frames():
 
     img = frame.frame_buffer
     mask = stateTracker.get_testing_mask()
-    if mask:
-      with mask.read:
-        if mask.valid():
-          match mask.detection_type:
-            case "similarity":
-              similarity_score = mask.similarity(img)
-              if similarity_score > mask.similarity_threshold:
-                img = mask.overlay(img, 5, (0, 255, 0), str(similarity_score))
-              else:
-                img = mask.overlay(img, 5, (0, 0, 255), str(similarity_score))
-            case "ocr":
-              ocr_text = mask.ocr(img)
-              if mask.ocr_check_condition(ocr_text):
-                img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
-              else:
-                img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
-            case "findsimilarity":
-              similarity_score, position = mask.findsimilarity(img)
-              if similarity_score > mask.findsimilarity_threshold:
-                img = mask.overlay(img, 5, (0, 255, 0),
-                                   str(similarity_score), position)
-              else:
-                img = mask.overlay(img, 5, (0, 0, 255),
-                                   str(similarity_score), position)
+    if mask and mask.valid():
+      match mask.detection_type:
+        case "similarity":
+          similarity_score = mask.similarity(img)
+          if similarity_score > mask.similarity_threshold:
+            img = mask.overlay(img, 5, (0, 255, 0), str(similarity_score))
+          else:
+            img = mask.overlay(img, 5, (0, 0, 255), str(similarity_score))
+        case "ocr":
+          ocr_text = mask.ocr(img)
+          if mask.ocr_check_condition(ocr_text):
+            img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
+          else:
+            img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
+        case "findsimilarity":
+          similarity_score, position = mask.findsimilarity(img)
+          if similarity_score > mask.findsimilarity_threshold:
+            img = mask.overlay(img, 5, (0, 255, 0),
+                               str(similarity_score), position)
+          else:
+            img = mask.overlay(img, 5, (0, 0, 255),
+                               str(similarity_score), position)
 
     img = cv2.imencode(".jpg", img)[1]
 
@@ -165,6 +164,7 @@ def export_save():
 def import_save():
   global stateTracker
   Element.id_counter, stateTracker = pickle.loads(request.data)
+  socket.emit("refresh_page")
   return "Save imported successfully!"
 
 
@@ -178,7 +178,7 @@ def handle_action_event(data):
 def handle_action_event(data):
   element = stateTracker.get_element(data["id"])
   if element is not None:
-    return element.simulate()
+    return element.simulate(gameInteraction)
 
 
 @socket.on('state_event')
@@ -257,9 +257,77 @@ def handle_action_list_event(data):
         return {"status": "success"}
 
 
+@socket.on('edge_priority_event')
+def handle_edge_priority_event(data):
+  element = stateTracker.get_edge(data["id"])
+  if element is not None:
+    match data["action"]:
+      case "set":
+        element.priority = int(data["priority"])
+        socket.emit('state_update', element.get_data())
+        return {"status": "success"}
+
+
 @socket.on('setTestMaskId')
 def handle_test_mask_event(data):
   stateTracker.set_testing_id(data["id"])
+
+
+@socket.on('get_detect_loc')
+def handle_get_detect_log(data):
+  element = stateTracker.get_element(data["id"])
+  if element is not None and element.mask.valid():
+    return element.mask.get_detect_loc()
+
+
+# Order in which edges will be checked
+# First edge to be checked will be the highest priority number and then highest in graph editor
+def sort_edges_compare(a, b):
+  global stateTracker
+
+  aedge = stateTracker.get_edge(a)
+  bedge = stateTracker.get_edge(b)
+  if aedge.priority == bedge.priority:
+    astate = stateTracker.get_state(aedge.targetStateId)
+    bstate = stateTracker.get_state(bedge.targetStateId)
+    if astate.y == bstate.y:
+      return -1
+    return astate.y - bstate.y
+  return bedge.priority - aedge.priority
+
+
+@socket.on('test_goto_next_element')
+def handle_get_detect_log(data):
+  element = stateTracker.get_element(data["id"])
+  frame = None
+  if gameInteraction.get_frame_number() != -1:
+    frame = gameInteraction.get_last_frame().frame_buffer
+  if element is not None:
+    match element.type:
+      case "State":
+        edgeList = sorted(element.outgoingEdges,
+                          key=cmp_to_key(sort_edges_compare))
+        for edgeID in edgeList:
+          edge = stateTracker.get_edge(edgeID)
+          if not edge.mask.valid():
+            return edge.id
+          if frame is None:
+            return element.id
+          if edge.check_condition(frame):
+            return edge.id
+
+      case "Edge":
+        state = stateTracker.get_state(element.targetStateId)
+        if not state.mask.valid():
+          return state.id
+        if frame is None:
+          return element.id
+        if state.check_condition(frame):
+          return state.id
+        else:
+          return element.sourceStateId
+    return element.id
+  return -1
 
 
 if __name__ == "__main__":

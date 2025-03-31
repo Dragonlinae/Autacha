@@ -1,6 +1,8 @@
 import { selectedElement } from "../managers/selectedelementManager.js";
 import { StateVisualElement, EdgeVisualElement } from "../classes/editorelementsClass.js";
 import socket from "../managers/socketManager.js";
+import { elementManager } from "../managers/elementManager.js";
+
 
 (function () {
   var frameButton = document.getElementById("inspector-update-frame");
@@ -101,6 +103,19 @@ import socket from "../managers/socketManager.js";
   var additionalCondition = document.getElementById("custom-condition");
   additionalCondition.addEventListener("change", function (event) {
     socket.emit("additional_cond_event", { id: selectedElement.getSelectedElement().getId(), action: "set", cond: event.target.value });
+  });
+
+  var nextElementButton = document.getElementById("inspector-goto-next-element");
+  nextElementButton.addEventListener("click", function () {
+    socket.emit("test_goto_next_element", {
+      id: selectedElement.getSelectedElement().getId()
+    }, function (nextID) {
+      console.log(nextID);
+      var nextElement = elementManager.findElement(nextID);
+      if (nextElement != null) {
+        selectedElement.selectElement(nextElement);
+      }
+    });
   });
 
   var inspectorMaskDiv = document.getElementById("inspector-mask");

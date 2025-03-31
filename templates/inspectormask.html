@@ -2,7 +2,10 @@
 {% endif %}
 
 {% if body %}
-<input type="text" id="element-name" value="Element 0">
+<label>✎
+  <input type="text" id="element-name" value="Element 0">
+</label>
+<button id="inspector-goto-next-element">Test transition to next element</button>
 <img id="inspector-frame" src="" alt="Frame" hidden>
 <button id="inspector-update-frame">Update Frame</button>
 <button id="inspector-clear-mask">Clear Mask</button>

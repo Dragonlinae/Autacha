@@ -49,9 +49,9 @@ class Element:
     if self.mask:
       return self.mask.check_condition(img) and execenv.evaluate(self.additionalcond, element=self, img=img)
 
-  def simulate(self):
+  def simulate(self, gameInteraction):
     for action in self.actions:
-      GameInteraction.input_action(action, self)
+      gameInteraction.input_action(action, self)
     return {"status": "success"}
 
 
@@ -103,7 +103,7 @@ class State(Element):
 
 class Edge(Element):
   passable_data = ["sourceStateId",
-                   "targetStateId", "lineThickness"]
+                   "targetStateId", "lineThickness", "priority"]
 
   def __init__(self, data):
     super().__init__(data)
@@ -111,6 +111,7 @@ class Edge(Element):
     self.sourceStateId = data.get("sourceStateId", None)
     self.targetStateId = data.get("targetStateId", None)
     self.lineThickness = data.get("lineThickness", 2)
+    self.priority = 0
     self.name = data.get("name", "Edge " + str(self.id))
 
   def update(self, data):

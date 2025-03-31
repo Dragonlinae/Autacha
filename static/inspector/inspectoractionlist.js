@@ -73,10 +73,12 @@ import socket from "../managers/socketManager.js";
     socket.emit("action_list_event", {
       id: selectedElement.getSelectedElement().getId(), action: "set", actionlist: actions
     }, function (confirmation) {
+      testActionsButton.classList.add("record-active");
       socket.emit("simulate_event", {
         id: selectedElement.getSelectedElement().getId()
       }, function (confirmation2) {
         console.log(confirmation2);
+        testActionsButton.classList.remove("record-active");
       });
     });
   });
@@ -284,9 +286,42 @@ import socket from "../managers/socketManager.js";
     });
   }
 
+  function recordClickDetect(div) {
+    if (div.querySelector('button[name="record-click-detect"]').classList.contains("record-active")) {
+      recordCancel();
+      return;
+    }
+    recordCancel();
+
+    record.targets = new Set(["dragEnd"]);
+    div.querySelector('button[name="record-click-detect"]').classList.add("record-active");
+    record.callback = function (data) {
+      if (data && "type" in data) {
+        if (data["type"] == "dragEnd") {
+          div.querySelector('button[name="record-click-detect"]').classList.remove("record-active");
+          record.active = false;
+
+          socket.emit("get_detect_loc", {
+            id: selectedElement.getSelectedElement().getId()
+          }, function (xoffset, yoffset) {
+            console.log(xoffset, yoffset);
+            div.querySelector('input[name="xoffset"]').value = data["xpos"] - xoffset;
+            div.querySelector('input[name="yoffset"]').value = data["ypos"] - yoffset;
+          });
+        }
+      } else {
+        div.querySelector('button[name="record-click-detect"]').classList.remove("record-active");
+        record.active = false;
+      }
+    }
+    record.active = true;
+  }
+
   function simulateClickDetect(div) {
+    var xoffset = div.querySelector('input[name="xoffset"]').value;
+    var yoffset = div.querySelector('input[name="yoffset"]').value;
     socket.emit('input_event', {
-      "id": selectedElement.getSelectedElement().getId(), "type": "clickDetect"
+      "id": selectedElement.getSelectedElement().getId(), "type": "clickDetect", "xoffset": xoffset, "yoffset": yoffset
     });
   }
 
@@ -329,6 +364,7 @@ import socket from "../managers/socketManager.js";
   actionListFuncs.recordContDrag = recordContDrag;
   actionListFuncs.simulateContDrag = simulateContDrag;
   actionListFuncs.simulateKey = simulateKey;
+  actionListFuncs.recordClickDetect = recordClickDetect;
   actionListFuncs.simulateClickDetect = simulateClickDetect;
   actionListFuncs.wait = wait;
   actionListFuncs.exec = exec;

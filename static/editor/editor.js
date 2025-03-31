@@ -1,6 +1,6 @@
 import { StateVisualElement, EdgeVisualElement, TempEdgeVisualElement } from "../classes/editorelementsClass.js";
 import { selectedElement } from "../managers/selectedelementManager.js";
-import { ElementManager } from "../managers/elementManager.js";
+import { elementManager } from "../managers/elementManager.js";
 import socket from "../managers/socketManager.js";
 
 (function () {
@@ -10,7 +10,6 @@ import socket from "../managers/socketManager.js";
   var isPanning = false;
   var isDragging = false;
   var dragOffset = { x: 0, y: 0 };
-  var elementManager = new ElementManager();
   var canvasTransform = { x: 0, y: 0, scale: 1 };
 
 

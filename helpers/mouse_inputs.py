@@ -55,7 +55,6 @@ def click_mouse(win, pos, offset):
 
 
 def exec_mouse(win, mouse_event, offset):
-  print(win)
   if mouse_event["repeat"] == 0:
     return
   mouse_event["repeat"] -= 1

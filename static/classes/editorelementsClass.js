@@ -119,6 +119,7 @@ class EdgeVisualElement extends VisualElement {
       sourceState: null,
       targetState: null,
       lineThickness: 2,
+      priority: 0,
       name: "Edge",
       repeats: -1,
     };

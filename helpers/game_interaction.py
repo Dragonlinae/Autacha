@@ -8,7 +8,6 @@ from difflib import SequenceMatcher as SM
 
 
 class GameInteraction:
-
   def __init__(self):
     self.ahk = AHK(version='v2')
     self.win = None
@@ -79,8 +78,10 @@ class GameInteraction:
 
       case "clickDetect":
         if element:
+          xoffset = int(data["xoffset"])
+          yoffset = int(data["yoffset"])
           mouse_inputs.click_mouse(
-              self.win, element.mask.get_detect_loc(), self.offset)
+              self.win, element.mask.get_detect_loc(), (self.offset[0] + xoffset, self.offset[1] + yoffset))
         return {"status": "success"}
 
       case "wait":

@@ -1,5 +1,6 @@
 import { selectedElement } from "../managers/selectedelementManager.js";
 import { StateVisualElement, EdgeVisualElement } from "../classes/editorelementsClass.js";
+import socket from "../managers/socketManager.js";
 
 (function () {
   var insMask = document.getElementById("inspector-mask");
@@ -25,6 +26,7 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
         insMask.update();
         insState.hidden = true;
         insEdge.hidden = false;
+        insEdge.update();
         insActionList.hidden = false;
         insActionList.update();
       }
@@ -76,12 +78,17 @@ import { StateVisualElement, EdgeVisualElement } from "../classes/editorelements
           .then(response => response.text())
           .then(responseText => {
             console.log("Save imported successfully:", responseText);
-            location.reload()
           })
           .catch(error => console.error("Error importing file:", error));
       };
       reader.readAsArrayBuffer(file);
     }
+  });
+
+
+
+  socket.on('refresh_page', data => {
+    location.reload()
   });
 
 })();

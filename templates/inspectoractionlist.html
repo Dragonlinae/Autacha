@@ -103,6 +103,15 @@
 </template>
 
 <template id="action-click-detect-params-template">
+  <label>Offset X:
+    <input type="number" name="xoffset" value="0" min="0" step="1">
+  </label>
+  <label>Offset Y:
+    <input type="number" name="yoffset" value="0" min="0" step="1">
+  </label>
+  <button class="record-click-detect" name="record-click-detect"
+    onclick="actionListFuncs.recordClickDetect(this.parentElement)">Record
+    Click Detect Offset</button>
   <button class="simulate" name="simulate-click-detect"
     onclick="actionListFuncs.simulateClickDetect(this.parentElement)">Simulate
     Click Detect</button>

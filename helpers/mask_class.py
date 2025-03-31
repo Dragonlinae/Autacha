@@ -147,32 +147,39 @@ class Mask:
       return False
 
   def overlay(self, frame, borderThickness=0, borderColor=(0, 0, 0), text="", offset=None):
-    overlay = frame.copy()
-    if self.detection_type == "similarity":
-      overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
-              self.offset[0]:self.offset[0] + self.dimensions[1]] = cv2.addWeighted(
-                  self.mask, 0.5, overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
-                                          self.offset[0]:self.offset[0] + self.dimensions[1]], 0.5, 0)
+    with self.read:
+      try:
+        overlay = frame.copy()
+        if self.detection_type == "similarity":
+          overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
+                  self.offset[0]:self.offset[0] + self.dimensions[1]] = cv2.addWeighted(
+                      self.mask, 0.5, overlay[self.offset[1]:self.offset[1] + self.dimensions[0],
+                                              self.offset[0]:self.offset[0] + self.dimensions[1]], 0.5, 0)
 
-    if self.detection_type == "findsimilarity":
-      overlay[offset[1]:offset[1] + self.dimensions[0],
-              offset[0]:offset[0] + self.dimensions[1]] = cv2.addWeighted(
-                  self.mask, 0.5, overlay[offset[1]:offset[1] + self.dimensions[0],
-                                          offset[0]:offset[0] + self.dimensions[1]], 0.5, 0)
+        if self.detection_type == "findsimilarity":
+          overlay[offset[1]:offset[1] + self.dimensions[0],
+                  offset[0]:offset[0] + self.dimensions[1]] = cv2.addWeighted(
+                      self.mask, 0.5, overlay[offset[1]:offset[1] + self.dimensions[0],
+                                              offset[0]:offset[0] + self.dimensions[1]], 0.5, 0)
 
-    if borderThickness > 0:
-      if self.detection_type == "findsimilarity":
-        cv2.rectangle(overlay, (offset[0], offset[1]), (offset[0] + self.dimensions[1], offset[1] + self.dimensions[0]),
-                      borderColor, borderThickness)
-      else:
-        cv2.rectangle(overlay, (self.offset[0], self.offset[1]), (self.offset[0] + self.dimensions[1], self.offset[1] + self.dimensions[0]),
-                      borderColor, borderThickness)
+        if borderThickness > 0:
+          if self.detection_type == "findsimilarity":
+            cv2.rectangle(overlay, (offset[0], offset[1]), (offset[0] + self.dimensions[1], offset[1] + self.dimensions[0]),
+                          borderColor, borderThickness)
+          else:
+            cv2.rectangle(overlay, (self.offset[0], self.offset[1]), (self.offset[0] + self.dimensions[1], self.offset[1] + self.dimensions[0]),
+                          borderColor, borderThickness)
 
-    if text != "":
-      cv2.putText(overlay, text, (30, 30),
-                  cv2.FONT_HERSHEY_COMPLEX, 1, borderColor, 2)
+        if text != "":
+          cv2.putText(overlay, text, (30, 30),
+                      cv2.FONT_HERSHEY_COMPLEX, 1, borderColor, 2)
 
-    return overlay
+        return overlay
+      except cv2.error as e:
+        print(e)
+        # Not proper, but idfk what the issue is and at this point I'm calling it quits temporarily
+        # Race condition doesn't seem to cause mismatch size, yet it's failing with input size diff
+        return frame
 
   def check_condition(self, img):
     with self.read:
@@ -192,9 +199,9 @@ class Mask:
     with self.read:
       match self.detection_type:
         case "findsimilarity":
-          return (self.findsimilarity_loc[0] + self.dimensions[1]/2, self.findsimilarity_loc[1] + self.dimensions[0]/2)
+          return (self.findsimilarity_loc[0] + self.dimensions[1]//2, self.findsimilarity_loc[1] + self.dimensions[0]//2)
         case _:
-          return (self.offset[0] + self.dimensions[1]/2, self.offset[1] + self.dimensions[0]/2)
+          return (self.offset[0] + self.dimensions[1]//2, self.offset[1] + self.dimensions[0]//2)
 
   def get_data(self):
     with self.read:

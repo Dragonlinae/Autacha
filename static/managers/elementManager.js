@@ -153,4 +153,6 @@ class ElementManager {
   }
 }
 
-export { ElementManager };
+var elementManager = new ElementManager()
+
+export { elementManager };
