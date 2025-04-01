@@ -350,13 +350,15 @@ import socket from "../managers/socketManager.js";
 
   function inputHook(div) {
     var title = div.querySelector('input[name="title"]').value;
+    var confidence = div.querySelector('input[name="confidence"]').value;
     var timeout = div.querySelector('input[name="timeout"]').value;
-    socket.emit('input_event', { "type": "hookInputs", "title": title, "timeout": timeout })
+    socket.emit('input_event', { "type": "hookInputs", "title": title, "confidence": confidence, "timeout": timeout })
   }
 
   function videoHook(div) {
     var title = div.querySelector('input[name="title"]').value;
-    socket.emit('input_event', { "type": "hookVideo", "title": title })
+    var confidence = div.querySelector('input[name="confidence"]').value;
+    socket.emit('input_event', { "type": "hookVideo", "confidence": confidence, "title": title })
   }
 
   actionListFuncs.recordClick = recordClick;

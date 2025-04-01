@@ -58,7 +58,7 @@ curr.simulate(gameInteraction)
 while True:
   time.sleep(0.01)
   frame = None
-  if gameInteraction.get_frame_number != frame_number:
+  if gameInteraction.get_frame_number() != frame_number:
     frame = gameInteraction.get_last_frame().frame_buffer
 
   changed = False
@@ -70,9 +70,9 @@ while True:
           curr = edge
           changed = True
           break
-        if frame is None:
-          continue
-        if edge.check_condition(frame):
+        elif frame is None:
+          pass
+        elif edge.check_condition(frame):
           curr = edge
           changed = True
           break
@@ -82,9 +82,9 @@ while True:
       if not state.mask.valid():
         curr = state
         changed = True
-      if frame is None:
-        continue
-      if state.check_condition(frame):
+      elif frame is None:
+        pass
+      elif state.check_condition(frame):
         curr = state
         changed = True
       else:

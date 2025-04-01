@@ -66,7 +66,7 @@ class Mask:
     mse /= float(self.dimensions[0] * self.dimensions[1] * 3)
     return 1 - np.sqrt(mse) / 255.0
 
-  def findsimilarity_thread(self, frame):
+  def findsimilarity_thread(self, frame, has_lock=False):
     with self.read:
       try:
         res = cv2.matchTemplate(frame, self.mask, cv2.TM_CCOEFF_NORMED)
@@ -74,16 +74,17 @@ class Mask:
         self.findsimilarity_score = max_val
         self.findsimilarity_loc = max_loc
       finally:
-        self.findsimilarity_lock.release()
+        if has_lock:
+          self.findsimilarity_lock.release()
         return self.findsimilarity_score, self.findsimilarity_loc
 
   def findsimilarity(self, frame):
     if self.findsimilarity_lock.acquire(blocking=False):
-      Thread(target=self.findsimilarity_thread, args=[frame]).start()
+      Thread(target=self.findsimilarity_thread, args=[frame, True]).start()
 
     return self.findsimilarity_score, self.findsimilarity_loc
 
-  def ocr_thread(self, frame):
+  def ocr_thread(self, frame, has_lock=False):
     with self.read:
       try:
         with PyTessBaseAPI(path='./tessdata') as api:
@@ -96,12 +97,13 @@ class Mask:
               res.append(word)
           self.ocr_last_read = ' '.join(res)
       finally:
-        self.ocr_lock.release()
+        if has_lock:
+          self.ocr_lock.release()
         return self.ocr_last_read
 
   def ocr(self, frame):
     if self.ocr_lock.acquire(blocking=False):
-      Thread(target=self.ocr_thread, args=[frame]).start()
+      Thread(target=self.ocr_thread, args=[frame, True]).start()
 
     return self.ocr_last_read
 

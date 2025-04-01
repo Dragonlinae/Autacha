@@ -119,7 +119,7 @@
 
 <template id="action-wait-params-template">
   <label>Time (ms):
-    <input type="number" name="time" value="0" min="0" step="1">
+    <input type="number" name="time" value="1000" min="0" step="1">
   </label>
   <button class="simulate" name="simulate-wait" onclick="actionListFuncs.wait(this.parentElement)" hidden>Simulate
     Wait</button>
@@ -143,6 +143,9 @@
   <label>Game Title:
     <input type="text" name="title" placeholder='Arknights'></input>
   </label>
+  <label>Minimum Match Confidence:
+    <input type="number" name="confidence" value="0.9" min="0" max="1" step="0.01">
+  </label>
   <label>Timeout (s):
     <input type="number" name="timeout" value="5"></input>
   </label>
@@ -153,6 +156,9 @@
 <template id="action-video-hook-params-template">
   <label>Game Title:
     <input type="text" name="title" placeholder='Arknights'></input>
+  </label>
+  <label>Minimum Match Confidence:
+    <input type="number" name="confidence" value="0.9" min="0" max="1" step="0.01">
   </label>
   <button class="simulate" name="simulate-video-hook" onclick="actionListFuncs.videoHook(this.parentElement)">Simulate
     Video Hook</button>

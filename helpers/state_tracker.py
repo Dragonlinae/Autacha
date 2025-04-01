@@ -121,6 +121,9 @@ class StateTracker:
   def get_testing_mask(self):
     if self.testing_id == -1:
       return None
+    element = self.get_element(self.testing_id)
+    if element is None:
+      return None
     return self.get_element(self.testing_id).mask
 
   def set_testing_id(self, id):
