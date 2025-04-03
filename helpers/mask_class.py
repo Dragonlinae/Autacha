@@ -196,6 +196,7 @@ class Mask:
           case "findsimilarity":
             similarity_score, position = self.findsimilarity_thread(img)
             return similarity_score > self.findsimilarity_threshold
+      return True
 
   def get_detect_loc(self):
     with self.read:

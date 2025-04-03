@@ -22,6 +22,7 @@ import socket from "../managers/socketManager.js";
     "close": "Close Program",
     "hookInputs": "Hook Inputs",
     "hookVideo": "Hook Video",
+    "setWindowDim": "Set Window Dimensions",
   }
 
   var paramTemplates = {
@@ -36,6 +37,7 @@ import socket from "../managers/socketManager.js";
     "close": document.getElementById("action-close-params-template"),
     "hookInputs": document.getElementById("action-input-hook-params-template"),
     "hookVideo": document.getElementById("action-video-hook-params-template"),
+    "setWindowDim": document.getElementById("action-set-window-dimensions-template"),
   };
 
   for (const key of Object.keys(paramTemplates)) {
@@ -333,7 +335,7 @@ import socket from "../managers/socketManager.js";
   }
 
   function exec(div) {
-    var command = div.querySelector('textarea[name="command"]').value;
+    var command = div.querySelector('textarea[name="cmd"]').value;
     socket.emit('input_event', {
       "id": selectedElement.getSelectedElement().getId(), "type": "exec", "cmd": command
     })
@@ -361,6 +363,27 @@ import socket from "../managers/socketManager.js";
     socket.emit('input_event', { "type": "hookVideo", "confidence": confidence, "title": title })
   }
 
+  function getWindowDimHook(div) {
+    var x = div.querySelector('input[name="xpos"]')
+    var y = div.querySelector('input[name="ypos"]')
+    var w = div.querySelector('input[name="width"]')
+    var h = div.querySelector('input[name="height"]')
+    socket.emit('get_win_dim', {}, function (xx, yy, ww, hh) {
+      x.value = xx;
+      y.value = yy;
+      w.value = ww;
+      h.value = hh;
+    })
+  }
+
+  function setWindowDimHook(div) {
+    var x = div.querySelector('input[name="xpos"]').value
+    var y = div.querySelector('input[name="ypos"]').value
+    var w = div.querySelector('input[name="width"]').value
+    var h = div.querySelector('input[name="height"]').value
+    socket.emit('input_event', { "type": "setWindowDim", "xpos": x, "ypos": y, "width": w, "height": h })
+  }
+
   actionListFuncs.recordClick = recordClick;
   actionListFuncs.simulateClick = simulateClick;
   actionListFuncs.recordContDrag = recordContDrag;
@@ -374,6 +397,8 @@ import socket from "../managers/socketManager.js";
   actionListFuncs.close = close;
   actionListFuncs.inputHook = inputHook;
   actionListFuncs.videoHook = videoHook;
+  actionListFuncs.getWindowDimHook = getWindowDimHook;
+  actionListFuncs.setWindowDimHook = setWindowDimHook;
 
   window.actionListFuncs = actionListFuncs;
 

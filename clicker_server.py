@@ -280,6 +280,11 @@ def handle_get_detect_log(data):
     return element.mask.get_detect_loc()
 
 
+@socket.on('get_win_dim')
+def handle_get_win_dim(data):
+  return gameInteraction.win.get_position()
+
+
 # Order in which edges will be checked
 # First edge to be checked will be the highest priority number and then highest in graph editor
 def sort_edges_compare(a, b):
@@ -309,19 +314,12 @@ def handle_get_detect_log(data):
                           key=cmp_to_key(sort_edges_compare))
         for edgeID in edgeList:
           edge = stateTracker.get_edge(edgeID)
-          if not edge.mask.valid():
-            return edge.id
-          if frame is None:
-            return element.id
           if edge.check_condition(frame):
             return edge.id
+        return element.id
 
       case "Edge":
         state = stateTracker.get_state(element.targetStateId)
-        if not state.mask.valid():
-          return state.id
-        if frame is None:
-          return element.id
         if state.check_condition(frame):
           return state.id
         else:

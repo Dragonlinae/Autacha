@@ -5,16 +5,34 @@ import pickle
 import sys
 import time
 from functools import cmp_to_key
+import argparse
+import helpers.execenv as execenv
 
+parser = argparse.ArgumentParser(
+    description="Run autacha automation files",
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    epilog="""EXAMPLES:
+python %(prog)s ./myfile.autacha
+python %(prog)s ./myfile.autacha -s Start -e End -xf Setup -xt Base -f base recruit battle"""
+)
+parser.add_argument("path", help="path to autacha file")
+parser.add_argument(
+    "-s", "--start", help="start state (where automation starts)", default="Start")
+parser.add_argument(
+    "-e", "--end", help="end states (stops automation)", default="End")
+parser.add_argument(
+    "-xf", "--skipfrom", help="skip from this state", default="Setup")
+parser.add_argument(
+    "-xt", "--skipto", help="skip to this state")
+parser.add_argument(
+    "-f", "--flags", nargs="*", help="initialized eval variables, will be set to None, can set multiple")
+args = parser.parse_args()
 
 stateTracker = None
 gameInteraction = None
+aftersetup = None
 
-if len(sys.argv) != 2:
-  print(f"Usage: {sys.argv[0]} [.autacha FILE PATH]")
-  print(f"Ensure that there is exactly one state named 'Start', and name terminating states with 'End'")
-
-with open(sys.argv[1], "rb") as f:
+with open(args.path, "rb") as f:
   stateTracker = pickle.load(f)[1]
 
 
@@ -36,22 +54,27 @@ def sort_edges_compare(a, b):
 
 curr = None
 for id, state in stateTracker.states.items():
-  if state.name == "Start":
+  if state.name == args.start:
     if curr == None:
       curr = state
     else:
       print(
-          "More than one [Start] state detected. Ensure that only one state is named 'Start'.")
+          f"More than one [{args.start}] state detected. Ensure that only one state is named '{args.start}'.")
       exit(0)
 
   state.outgoingEdges.sort(key=cmp_to_key(sort_edges_compare))
   print(state.outgoingEdges)
 
 if curr == None:
-  print("[Start] state not found. Ensure that exactly one state is named 'Start'.")
+  print(f"[{args.start}] state not found. Ensure that exactly one state is named '{args.start}'.")
   exit(0)
 
 gameInteraction = GameInteraction()
+
+if args.flags is not None:
+  for flag in args.flags:
+    execenv.execute(f"global {flag}\n{flag} = None")
+  pass
 
 frame_number = -1
 curr.simulate(gameInteraction)
@@ -66,25 +89,14 @@ while True:
     case "State":
       for edgeID in curr.outgoingEdges:
         edge = stateTracker.get_edge(edgeID)
-        if not edge.mask.valid():
-          curr = edge
-          changed = True
-          break
-        elif frame is None:
-          pass
-        elif edge.check_condition(frame):
+        if edge.check_condition(frame):
           curr = edge
           changed = True
           break
 
     case "Edge":
       state = stateTracker.get_state(curr.targetStateId)
-      if not state.mask.valid():
-        curr = state
-        changed = True
-      elif frame is None:
-        pass
-      elif state.check_condition(frame):
+      if state.check_condition(frame):
         curr = state
         changed = True
       else:
@@ -95,7 +107,14 @@ while True:
     print(f"Transitioned to {curr.type} {curr.name}")
     curr.simulate(gameInteraction)
 
-  if curr.name == "End":
+  if curr.name == args.end:
     break
+  elif args.skipto is not None and curr.name == args.skipfrom:
+    for id, state in stateTracker.states.items():
+      if state.name == args.skipto:
+        print("Skipping to", args.skipto)
+        curr = state
+        curr.simulate(gameInteraction)
+        break
 
 print("Autacha Complete")

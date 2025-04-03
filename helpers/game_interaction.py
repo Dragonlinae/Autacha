@@ -152,6 +152,12 @@ class GameInteraction:
 
         return {"status": "success"}
 
+      case "setWindowDim":
+        if self.win is not None:
+          self.win.move(x=int(data["xpos"]), y=int(data["ypos"]), width=int(
+              data["width"]), height=int(data["height"]))
+        return {"status": "success"}
+
       case _:
         return {"status": "error", "message": "Invalid action"}
 

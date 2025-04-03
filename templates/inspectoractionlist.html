@@ -164,9 +164,30 @@
     Video Hook</button>
 </template>
 
+<template id="action-set-window-dimensions-template">
+  <label>X:
+    <input type="number" name="xpos" value="0" min="0" step="1">
+  </label>
+  <label>Y:
+    <input type="number" name="ypos" value="0" min="0" step="1">
+  </label>
+  <label>W:
+    <input type="number" name="width" value="1280" min="0" step="1">
+  </label>
+  <label>H:
+    <input type="number" name="height" value="780" min="0" step="1">
+  </label>
+  <button class="get-window-dim" name="get-window-dim"
+    onclick="actionListFuncs.getWindowDimHook(this.parentElement)">Get
+    Current Window Values</button>
+  <button class="simulate" name="simulate-set-video-dim"
+    onclick="actionListFuncs.setWindowDimHook(this.parentElement)">Simulate
+    Move and Resize</button>
+</template>
+
 <template id="action-exec-params-template">
   <label>Command:
-    <textarea name="command" placeholder="Please no malicious :3" rows="1"></textarea>
+    <textarea name="cmd" placeholder="Please no malicious :3" rows="1"></textarea>
   </label>
   <button class="simulate" name="simulate-exec" onclick="actionListFuncs.exec(this.parentElement)">Simulate
     Command</button>

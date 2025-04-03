@@ -46,8 +46,12 @@ class Element:
     return data
 
   def check_condition(self, img):
-    if self.mask:
+    if self.mask.valid():
+      if img is None:
+        return False
       return self.mask.check_condition(img) and execenv.evaluate(self.additionalcond, element=self, img=img)
+    else:
+      return execenv.evaluate(self.additionalcond, element=self, img=img)
 
   def simulate(self, gameInteraction):
     for action in self.actions:
