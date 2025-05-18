@@ -126,6 +126,14 @@ class StateTracker:
       return None
     return self.get_element(self.testing_id).mask
 
+  def get_testing_element(self):
+    if self.testing_id == -1:
+      return None
+    element = self.get_element(self.testing_id)
+    if element is None:
+      return None
+    return self.get_element(self.testing_id)
+
   def set_testing_id(self, id):
     if id in self.states or id in self.edges:
       self.testing_id = id

@@ -92,29 +92,33 @@ def stream_frames():
     # img = cv2.imencode(".png", img)[1]
 
     img = frame.frame_buffer
+    element = stateTracker.get_testing_element()
     mask = stateTracker.get_testing_mask()
-    if mask and mask.valid():
-      match mask.detection_type:
-        case "similarity":
-          similarity_score = mask.similarity(img)
-          if similarity_score > mask.similarity_threshold:
-            img = mask.overlay(img, 5, (0, 255, 0), str(similarity_score))
-          else:
-            img = mask.overlay(img, 5, (0, 0, 255), str(similarity_score))
-        case "ocr":
-          ocr_text = mask.ocr(img)
-          if mask.ocr_check_condition(ocr_text):
-            img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
-          else:
-            img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
-        case "findsimilarity":
-          similarity_score, position = mask.findsimilarity(img)
-          if similarity_score > mask.findsimilarity_threshold:
-            img = mask.overlay(img, 5, (0, 255, 0),
-                               str(similarity_score), position)
-          else:
-            img = mask.overlay(img, 5, (0, 0, 255),
-                               str(similarity_score), position)
+    try:
+      if mask and mask.valid():
+        match mask.detection_type:
+          case "similarity":
+            similarity_score = mask.similarity(img)
+            if element.check_condition(img):
+              img = mask.overlay(img, 5, (0, 255, 0), str(similarity_score))
+            else:
+              img = mask.overlay(img, 5, (0, 0, 255), str(similarity_score))
+          case "ocr":
+            ocr_text = mask.ocr(img)
+            if element.check_condition(img):
+              img = mask.overlay(img, 5, (0, 255, 0), ocr_text)
+            else:
+              img = mask.overlay(img, 5, (0, 0, 255), ocr_text)
+          case "findsimilarity":
+            similarity_score, position = mask.findsimilarity(img)
+            if element.check_condition(img):
+              img = mask.overlay(img, 5, (0, 255, 0),
+                                 str(similarity_score), position)
+            else:
+              img = mask.overlay(img, 5, (0, 0, 255),
+                                 str(similarity_score), position)
+    except Exception as e:
+      print(e)
 
     img = cv2.imencode(".jpg", img)[1]
 

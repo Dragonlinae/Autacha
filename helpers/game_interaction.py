@@ -111,9 +111,11 @@ class GameInteraction:
           time.sleep(1)
           for test_window in self.ahk.list_windows():
             match_score = SM(None, data["title"], test_window.title).ratio()
+            print(match_score, test_window.title)
             if match_score >= best_match:
               best_match = match_score
               title = test_window.title
+        # print(title, best_match)
         self.win = self.ahk.win_wait(title=title, timeout=int(data["timeout"]))
         print(int(data["timeout"]))
         print("INPUT HOOKED")
