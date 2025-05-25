@@ -75,12 +75,12 @@ import socket from "../managers/socketManager.js";
     socket.emit("action_list_event", {
       id: selectedElement.getSelectedElement().getId(), action: "set", actionlist: actions
     }, function (confirmation) {
-      testActionsButton.classList.add("record-active");
+      testActionsButton.classList.add("active");
       socket.emit("simulate_event", {
         id: selectedElement.getSelectedElement().getId()
       }, function (confirmation2) {
         console.log(confirmation2);
-        testActionsButton.classList.remove("record-active");
+        testActionsButton.classList.remove("active");
       });
     });
   });
@@ -213,24 +213,24 @@ import socket from "../managers/socketManager.js";
   }
 
   function recordClick(div) {
-    if (div.querySelector('button[name="record-click"]').classList.contains("record-active")) {
+    if (div.querySelector('button[name="record-click"]').classList.contains("active")) {
       recordCancel();
       return;
     }
     recordCancel();
 
     record.targets = new Set(["dragEnd"]);
-    div.querySelector('button[name="record-click"]').classList.add("record-active");
+    div.querySelector('button[name="record-click"]').classList.add("active");
     record.callback = function (data) {
       if (data && "type" in data) {
         if (data["type"] == "dragEnd") {
           div.querySelector('input[name="xpos"]').value = data["xpos"];
           div.querySelector('input[name="ypos"]').value = data["ypos"];
-          div.querySelector('button[name="record-click"]').classList.remove("record-active");
+          div.querySelector('button[name="record-click"]').classList.remove("active");
           record.active = false;
         }
       } else {
-        div.querySelector('button[name="record-click"]').classList.remove("record-active");
+        div.querySelector('button[name="record-click"]').classList.remove("active");
         record.active = false;
       }
     }
@@ -245,14 +245,14 @@ import socket from "../managers/socketManager.js";
   }
 
   function recordContDrag(div) {
-    if (div.querySelector('button[name="record-cont-drag"]').classList.contains("record-active")) {
+    if (div.querySelector('button[name="record-cont-drag"]').classList.contains("active")) {
       recordCancel();
       return;
     }
     recordCancel();
 
     record.targets = new Set(["dragStart", "dragMove", "dragEnd"]);
-    div.querySelector('button[name="record-cont-drag"]').classList.add("record-active");
+    div.querySelector('button[name="record-cont-drag"]').classList.add("active");
     var dragPoints = []
     record.callback = function (data) {
       if (data && "type" in data) {
@@ -262,11 +262,11 @@ import socket from "../managers/socketManager.js";
         if (data["type"] == "dragEnd") {
           dragPoints.push([data["xpos"], data["ypos"], data["time"], 1]);
           div.querySelector('input[name="vertices"]').value = JSON.stringify(dragPoints)
-          div.querySelector('button[name="record-cont-drag"]').classList.remove("record-active");
+          div.querySelector('button[name="record-cont-drag"]').classList.remove("active");
           record.active = false;
         }
       } else {
-        div.querySelector('button[name="record-cont-drag"]').classList.remove("record-active");
+        div.querySelector('button[name="record-cont-drag"]').classList.remove("active");
         record.active = false;
       }
     }
@@ -289,18 +289,18 @@ import socket from "../managers/socketManager.js";
   }
 
   function recordClickDetect(div) {
-    if (div.querySelector('button[name="record-click-detect"]').classList.contains("record-active")) {
+    if (div.querySelector('button[name="record-click-detect"]').classList.contains("active")) {
       recordCancel();
       return;
     }
     recordCancel();
 
     record.targets = new Set(["dragEnd"]);
-    div.querySelector('button[name="record-click-detect"]').classList.add("record-active");
+    div.querySelector('button[name="record-click-detect"]').classList.add("active");
     record.callback = function (data) {
       if (data && "type" in data) {
         if (data["type"] == "dragEnd") {
-          div.querySelector('button[name="record-click-detect"]').classList.remove("record-active");
+          div.querySelector('button[name="record-click-detect"]').classList.remove("active");
           record.active = false;
 
           socket.emit("get_detect_loc", {
@@ -312,7 +312,7 @@ import socket from "../managers/socketManager.js";
           });
         }
       } else {
-        div.querySelector('button[name="record-click-detect"]').classList.remove("record-active");
+        div.querySelector('button[name="record-click-detect"]').classList.remove("active");
         record.active = false;
       }
     }

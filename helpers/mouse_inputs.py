@@ -32,12 +32,14 @@ def mouse_up(win, pos, offset):
   win.click(pos[0], pos[1], options="U NA")
 
 
-def drag_mouse_vec(win, vertices, offset):
+def drag_mouse_vec(win, vertices, offset, flag=[True]):
   currtime = time.time()
   for i in range(len(vertices)):
     delay = vertices[i][2]/1000.0 + currtime - time.time()
     if (delay > 0):
       time.sleep(delay)
+    if not flag[0]:
+      break
     match vertices[i][3]:
       case 0:
         mouse_down(win, vertices[i][:2], offset)

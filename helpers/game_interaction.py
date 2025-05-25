@@ -15,7 +15,7 @@ class GameInteraction:
     self.offset = (0, 0)
     self.window_position = None
 
-  def input_action(self, data, element=None):
+  def input_action(self, data, element=None, flag=[True]):
     action = data["type"]
     match action:
       case "click":
@@ -48,7 +48,7 @@ class GameInteraction:
       case "dragVertices":
         vertices = data["vertices"]
         vertices = [[int(elem) for elem in point] for point in vertices]
-        mouse_inputs.drag_mouse_vec(self.win, vertices, self.offset)
+        mouse_inputs.drag_mouse_vec(self.win, vertices, self.offset, flag)
 
       case "dragStart":
         xpos = int(data["xpos"])
@@ -107,7 +107,7 @@ class GameInteraction:
       case "hookInputs":
         best_match = float(data["confidence"])
         title = None
-        while title is None:
+        while title is None and flag[0]:
           time.sleep(1)
           for test_window in self.ahk.list_windows():
             match_score = SM(None, data["title"], test_window.title).ratio()
@@ -127,7 +127,7 @@ class GameInteraction:
       case "hookVideo":
         best_match = float(data["confidence"])
         title = None
-        while title is None:
+        while title is None and flag[0]:
           time.sleep(1)
           for test_window in self.ahk.list_windows():
             match_score = SM(None, data["title"], test_window.title).ratio()

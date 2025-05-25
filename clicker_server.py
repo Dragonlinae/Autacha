@@ -2,6 +2,7 @@ from helpers.game_interaction import GameInteraction
 from helpers.state_tracker import StateTracker
 from helpers.mask_class import Mask
 from helpers.element_class import Element
+import helpers.execenv as execenv
 import time
 import cv2
 import numpy as np
@@ -13,6 +14,7 @@ import base64
 import ctypes
 import pickle
 from functools import cmp_to_key
+from threading import Lock
 
 
 def is_admin():
@@ -30,6 +32,8 @@ if not is_admin():
 
 stateTracker = StateTracker()
 gameInteraction = GameInteraction()
+gameLock = Lock()
+playing = [False]
 
 
 # target = 'A_AppData "/Microsoft/Windows/Start Menu/Programs/Google Play Games/Arknights.lnk"'
@@ -182,7 +186,94 @@ def handle_action_event(data):
 def handle_action_event(data):
   element = stateTracker.get_element(data["id"])
   if element is not None:
-    return element.simulate(gameInteraction)
+    locked = gameLock.acquire(0)
+    if not locked:
+      return {"status": "blocked"}
+    try:
+      return element.simulate(gameInteraction)
+    finally:
+      gameLock.release()
+      print("Simulation complete for element:", element.id)
+
+
+def play_automation_loop(curr):
+  print("In play_automation_loop")
+  global playing
+  frame_number = -1
+  curr.simulate(gameInteraction)
+  print(playing[0])
+  while playing[0]:
+    time.sleep(0.01)
+    frame = None
+    if gameInteraction.get_frame_number() != frame_number:
+      frame = gameInteraction.get_last_frame().frame_buffer
+      frame_number = gameInteraction.get_frame_number()
+
+    changed = False
+    match curr.type:
+      case "State":
+        for edgeID in curr.outgoingEdges:
+          edge = stateTracker.get_edge(edgeID)
+          if edge.check_condition(frame):
+            curr = edge
+            changed = True
+            break
+
+      case "Edge":
+        state = stateTracker.get_state(curr.targetStateId)
+        if state.check_condition(frame):
+          curr = state
+          changed = True
+        else:
+          curr = stateTracker.get_state(curr.sourceStateId)
+          print(f"Failed state assertion, returning to {curr.name}")
+
+    if changed:
+      print(f"Transitioned to {curr.type} {curr.name}")
+      socket.emit('select_element', {"id": curr.id})
+      curr.simulate(gameInteraction, playing)
+
+    if curr.name == "End":
+      playing[0] = False
+
+
+@socket.on('play_automation')
+def handle_play_automation(data):
+  global playing
+  locked = gameLock.acquire(0)
+  if not locked:
+    return {"status": "blocked"}
+  playing[0] = True
+  print("Starting automation...")
+  try:
+    if "id" not in data:
+      return {"status": "error", "message": "No starting element specified."}
+
+    curr = stateTracker.get_element(data["id"])
+    if curr is None:
+      return {"status": "error", "message": "Starting element not found."}
+
+    play_automation_loop(curr)
+    return {"status": "success", "message": "Automation completed."}
+  finally:
+    gameLock.release()
+    playing[0] = False
+    print("Automation stopped")
+
+
+@socket.on('stop_automation')
+def handle_stop_automation():
+  global playing
+  playing[0] = False
+  print("Automation stopped by user")
+  return {"status": "success", "message": "Automation stopped."}
+
+
+@socket.on('reset_automation_environment')
+def handle_reset_automation_environment():
+  execenv.clear()
+  print("Automation environment reset")
+  return {"status": "success", "message": "Automation environment reset."}
 
 
 @socket.on('state_event')

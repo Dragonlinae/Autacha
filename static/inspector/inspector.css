@@ -63,3 +63,7 @@
   color: black;
   outline: none;
 }
+
+#inspector .active {
+  background: red;
+}

@@ -53,9 +53,11 @@ class Element:
     else:
       return execenv.evaluate(self.additionalcond, element=self, img=img)
 
-  def simulate(self, gameInteraction):
+  def simulate(self, gameInteraction, flag=[True]):
     for action in self.actions:
-      gameInteraction.input_action(action, self)
+      if not flag[0]:
+        break
+      gameInteraction.input_action(action, self, flag=flag)
     return {"status": "success"}
 
 

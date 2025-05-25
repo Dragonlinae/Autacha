@@ -1,4 +1,5 @@
 import { selectedElement } from "../managers/selectedelementManager.js";
+import { elementManager } from "../managers/elementManager.js";
 import { StateVisualElement, EdgeVisualElement } from "../classes/editorelementsClass.js";
 import socket from "../managers/socketManager.js";
 
@@ -89,6 +90,49 @@ import socket from "../managers/socketManager.js";
 
   socket.on('refresh_page', data => {
     location.reload()
+  });
+
+
+  socket.on('select_element', data => {
+    const element = elementManager.findElement(data.id);
+    if (element) {
+      selectedElement.selectElement(element);
+    } else {
+      selectedElement.deselectElement();
+    }
+  });
+
+  var play_autacha_button = document.getElementById("play-autacha");
+  var stop_autacha_button = document.getElementById("stop-autacha");
+  var clear_env_button = document.getElementById("clear-env-vars");
+
+  play_autacha_button.addEventListener("click", function () {
+    if (!selectedElement.getSelectedElement()) {
+      alert("Please select a state to play the automation.");
+      return;
+    }
+    play_autacha_button.classList.add("active");
+    play_autacha_button.disabled = true;
+    socket.emit('play_automation', {
+      id: selectedElement.getSelectedElement().getId()
+    },
+      function (response) {
+        console.log("Automation start:", response);
+        play_autacha_button.classList.remove("active");
+        play_autacha_button.disabled = false;
+      });
+  });
+
+  stop_autacha_button.addEventListener("click", function () {
+    socket.emit('stop_automation', function (response) {
+      console.log("Automation stopped:", response);
+    });
+  });
+
+  clear_env_button.addEventListener("click", function () {
+    socket.emit('reset_automation_environment', function (response) {
+      console.log("Automation environment cleared:", response);
+    });
   });
 
 })();

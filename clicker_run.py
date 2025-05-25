@@ -83,6 +83,7 @@ while True:
   frame = None
   if gameInteraction.get_frame_number() != frame_number:
     frame = gameInteraction.get_last_frame().frame_buffer
+    frame_number = gameInteraction.get_frame_number()
 
   changed = False
   match curr.type:
