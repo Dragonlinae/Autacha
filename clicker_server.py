@@ -15,6 +15,7 @@ import ctypes
 import pickle
 from functools import cmp_to_key
 from threading import Lock
+from collections import deque
 
 
 def is_admin():
@@ -34,6 +35,8 @@ stateTracker = StateTracker()
 gameInteraction = GameInteraction()
 gameLock = Lock()
 playing = [False]
+video_overlay_shapes = deque()
+video_overlay_shapes_lock = Lock()
 
 
 # target = 'A_AppData "/Microsoft/Windows/Start Menu/Programs/Google Play Games/Arknights.lnk"'
@@ -124,6 +127,27 @@ def stream_frames():
     except Exception as e:
       print(e)
 
+    pending_delete = 0
+    with video_overlay_shapes_lock:  # hopefully no starvation with this, a bit unsure how it plays out
+      for shape in video_overlay_shapes:
+        if time.time() - shape[1] > 1:
+          pending_delete += 1
+          continue
+        data = shape[0]
+        print(data)
+        if "x" in data and "y" in data:
+          cv2.circle(img, (int(data["x"]), int(data["y"])),
+                     int(frame.height/30), (0, 0, 255), 2)
+          cv2.line(img, (int(data["x"]-frame.height/20), int(data["y"])),
+                   (int(data["x"]+frame.height/20), int(data["y"])),
+                   (0, 0, 255), 2)
+          cv2.line(img, (int(data["x"]), int(data["y"]-frame.height/20)),
+                   (int(data["x"]), int(data["y"]+frame.height/20)),
+                   (0, 0, 255), 2)
+
+      for _ in range(pending_delete):
+        video_overlay_shapes.popleft()
+
     img = cv2.imencode(".jpg", img)[1]
 
     stringData = img.tobytes()
@@ -178,19 +202,35 @@ def import_save():
 
 @socket.on('input_event')
 def handle_action_event(data):
+  global playing
   element = stateTracker.get_element(data["id"]) if "id" in data else None
-  return gameInteraction.input_action(data, element)
+  docallback = data.get("callback", False)
+  locked = gameLock.acquire(0)
+  if not locked:
+    return {"status": "blocked"}
+  try:
+    return gameInteraction.input_action(data, element, flag=playing, callback=(click_coord_callback if docallback else None))
+  finally:
+    gameLock.release()
+
+
+def click_coord_callback(data):
+  global video_overlay_shapes
+  with video_overlay_shapes_lock:
+    video_overlay_shapes.append([data, time.time()])
 
 
 @socket.on('simulate_event')
 def handle_action_event(data):
+  global playing
   element = stateTracker.get_element(data["id"])
   if element is not None:
     locked = gameLock.acquire(0)
     if not locked:
       return {"status": "blocked"}
     try:
-      return element.simulate(gameInteraction)
+      playing[0] = True
+      return element.simulate(gameInteraction, playing, click_coord_callback)
     finally:
       gameLock.release()
       print("Simulation complete for element:", element.id)
@@ -200,7 +240,7 @@ def play_automation_loop(curr):
   print("In play_automation_loop")
   global playing
   frame_number = -1
-  curr.simulate(gameInteraction)
+  curr.simulate(gameInteraction, playing, click_coord_callback)
   print(playing[0])
   while playing[0]:
     time.sleep(0.01)
@@ -232,7 +272,7 @@ def play_automation_loop(curr):
     if changed:
       print(f"Transitioned to {curr.type} {curr.name}")
       socket.emit('select_element', {"id": curr.id})
-      curr.simulate(gameInteraction, playing)
+      curr.simulate(gameInteraction, playing, click_coord_callback)
 
     if curr.name == "End":
       playing[0] = False

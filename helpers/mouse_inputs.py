@@ -32,7 +32,7 @@ def mouse_up(win, pos, offset):
   win.click(pos[0], pos[1], options="U NA")
 
 
-def drag_mouse_vec(win, vertices, offset, flag=[True]):
+def drag_mouse_vec(win, vertices, offset, flag=[True], callback=None):
   currtime = time.time()
   for i in range(len(vertices)):
     delay = vertices[i][2]/1000.0 + currtime - time.time()
@@ -45,6 +45,9 @@ def drag_mouse_vec(win, vertices, offset, flag=[True]):
         mouse_down(win, vertices[i][:2], offset)
       case 1:
         mouse_up(win, vertices[i][:2], offset)
+    if callback is not None:
+      callback({"type": "drag", "x": vertices[i][0],
+                "y": vertices[i][1]})
     # Timer(vertices[i][2]/1000.0 + currtime - time.time(), mouse_down,
     #       [win, vertices[i][:2], offset]).start()
   # Timer(vertices[-1][2]/1000.0 + currtime - time.time(), mouse_up,

@@ -15,7 +15,7 @@ class GameInteraction:
     self.offset = (0, 0)
     self.window_position = None
 
-  def input_action(self, data, element=None, flag=[True]):
+  def input_action(self, data, element=None, flag=[True], callback=None):
     action = data["type"]
     match action:
       case "click":
@@ -32,6 +32,8 @@ class GameInteraction:
             mouse_inputs.mouse_up(self.win, pos, self.offset)
           case _:
             return {"status": "error", "message": "Invalid press type"}
+        if callback is not None:
+          callback({"type": "click", "x": xpos, "y": ypos})
         return {"status": "success"}
 
       case "drag":
@@ -43,12 +45,17 @@ class GameInteraction:
         end = (endx, endy)
         velocity = int(data["velocity"])
         mouse_inputs.drag_mouse(self.win, start, end, velocity, self.offset)
+
+        if callback is not None:
+          callback({"type": "drag", "startx": startx, "starty": starty,
+                   "endx": endx, "endy": endy})
         return {"status": "success"}
 
       case "dragVertices":
         vertices = data["vertices"]
         vertices = [[int(elem) for elem in point] for point in vertices]
-        mouse_inputs.drag_mouse_vec(self.win, vertices, self.offset, flag)
+        mouse_inputs.drag_mouse_vec(
+            self.win, vertices, self.offset, flag, callback)
         return {"status": "success"}
 
       case "dragStart":
@@ -56,6 +63,8 @@ class GameInteraction:
         ypos = int(data["ypos"])
         pos = (xpos, ypos)
         mouse_inputs.mouse_down(self.win, pos, self.offset)
+        if callback is not None:
+          callback({"type": "dragStart", "x": xpos, "y": ypos})
         return {"status": "success"}
 
       case "dragMove":
@@ -63,6 +72,8 @@ class GameInteraction:
         ypos = int(data["ypos"])
         pos = (xpos, ypos)
         mouse_inputs.drag_move(self.win, pos, self.offset)
+        if callback is not None:
+          callback({"type": "dragMove", "x": xpos, "y": ypos})
         return {"status": "success"}
 
       case "dragEnd":
@@ -70,6 +81,8 @@ class GameInteraction:
         ypos = int(data["ypos"])
         pos = (xpos, ypos)
         mouse_inputs.mouse_up(self.win, pos, self.offset)
+        if callback is not None:
+          callback({"type": "dragEnd", "x": xpos, "y": ypos})
         return {"status": "success"}
 
       case "key":
@@ -83,6 +96,9 @@ class GameInteraction:
           yoffset = int(data["yoffset"])
           mouse_inputs.click_mouse(
               self.win, element.mask.get_detect_loc(), (self.offset[0] + xoffset, self.offset[1] + yoffset))
+          if callback is not None:
+            callback({"type": "clickDetect", "x": element.mask.get_detect_loc()[0] + xoffset,
+                     "y": element.mask.get_detect_loc()[1] + yoffset})
         return {"status": "success"}
 
       case "wait":

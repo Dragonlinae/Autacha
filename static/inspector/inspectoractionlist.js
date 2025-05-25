@@ -241,7 +241,7 @@ import socket from "../managers/socketManager.js";
     var xpos = div.querySelector('input[name="xpos"]').value;
     var ypos = div.querySelector('input[name="ypos"]').value;
     var pressType = div.querySelector('select[name="presstype"]').value
-    socket.emit('input_event', { "type": "click", "xpos": xpos, "ypos": ypos, "presstype": pressType });
+    socket.emit('input_event', { "type": "click", "xpos": xpos, "ypos": ypos, "presstype": pressType, "callback": true });
   }
 
   function recordContDrag(div) {
@@ -278,6 +278,7 @@ import socket from "../managers/socketManager.js";
     socket.emit('input_event', {
       "type": "dragVertices",
       "vertices": dragPoints
+      , "callback": true
     });
   }
 
@@ -285,6 +286,7 @@ import socket from "../managers/socketManager.js";
     var keycode = div.querySelector('input[name="keycode"]').value;
     socket.emit('input_event', {
       "type": "key", "keycode": keycode
+      , "callback": true
     });
   }
 
@@ -324,6 +326,7 @@ import socket from "../managers/socketManager.js";
     var yoffset = div.querySelector('input[name="yoffset"]').value;
     socket.emit('input_event', {
       "id": selectedElement.getSelectedElement().getId(), "type": "clickDetect", "xoffset": xoffset, "yoffset": yoffset
+      , "callback": true
     });
   }
 
@@ -331,6 +334,7 @@ import socket from "../managers/socketManager.js";
     var waitTime = div.querySelector('input[name="time"]').value;
     socket.emit('input_event', {
       "type": "wait", "time": waitTime
+      , "callback": true
     });
   }
 
@@ -338,29 +342,30 @@ import socket from "../managers/socketManager.js";
     var command = div.querySelector('textarea[name="cmd"]').value;
     socket.emit('input_event', {
       "id": selectedElement.getSelectedElement().getId(), "type": "exec", "cmd": command
+      , "callback": true
     })
   }
 
   function launch(div) {
     var path = div.querySelector('input[name="path"]').value;
-    socket.emit('input_event', { "type": "launch", "path": path })
+    socket.emit('input_event', { "type": "launch", "path": path, "callback": true })
   }
 
   function close(div) {
-    socket.emit('input_event', { "type": "close" })
+    socket.emit('input_event', { "type": "close", "callback": true })
   }
 
   function inputHook(div) {
     var title = div.querySelector('input[name="title"]').value;
     var confidence = div.querySelector('input[name="confidence"]').value;
     var timeout = div.querySelector('input[name="timeout"]').value;
-    socket.emit('input_event', { "type": "hookInputs", "title": title, "confidence": confidence, "timeout": timeout })
+    socket.emit('input_event', { "type": "hookInputs", "title": title, "confidence": confidence, "timeout": timeout, "callback": true })
   }
 
   function videoHook(div) {
     var title = div.querySelector('input[name="title"]').value;
     var confidence = div.querySelector('input[name="confidence"]').value;
-    socket.emit('input_event', { "type": "hookVideo", "confidence": confidence, "title": title })
+    socket.emit('input_event', { "type": "hookVideo", "confidence": confidence, "title": title, "callback": true })
   }
 
   function getWindowDimHook(div) {
@@ -381,7 +386,7 @@ import socket from "../managers/socketManager.js";
     var y = div.querySelector('input[name="ypos"]').value
     var w = div.querySelector('input[name="width"]').value
     var h = div.querySelector('input[name="height"]').value
-    socket.emit('input_event', { "type": "setWindowDim", "xpos": x, "ypos": y, "width": w, "height": h })
+    socket.emit('input_event', { "type": "setWindowDim", "xpos": x, "ypos": y, "width": w, "height": h, "callback": true })
   }
 
   actionListFuncs.recordClick = recordClick;
