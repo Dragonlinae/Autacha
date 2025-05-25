@@ -49,6 +49,7 @@ class GameInteraction:
         vertices = data["vertices"]
         vertices = [[int(elem) for elem in point] for point in vertices]
         mouse_inputs.drag_mouse_vec(self.win, vertices, self.offset, flag)
+        return {"status": "success"}
 
       case "dragStart":
         xpos = int(data["xpos"])
@@ -107,8 +108,10 @@ class GameInteraction:
       case "hookInputs":
         best_match = float(data["confidence"])
         title = None
-        while title is None and flag[0]:
+        while title is None:
           time.sleep(1)
+          if not flag[0]:
+            return {"status": "aborted"}
           for test_window in self.ahk.list_windows():
             match_score = SM(None, data["title"], test_window.title).ratio()
             print(match_score, test_window.title)
@@ -127,8 +130,10 @@ class GameInteraction:
       case "hookVideo":
         best_match = float(data["confidence"])
         title = None
-        while title is None and flag[0]:
+        while title is None:
           time.sleep(1)
+          if not flag[0]:
+            return {"status": "aborted"}
           for test_window in self.ahk.list_windows():
             match_score = SM(None, data["title"], test_window.title).ratio()
             if match_score >= best_match:

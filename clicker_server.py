@@ -212,6 +212,7 @@ def play_automation_loop(curr):
     changed = False
     match curr.type:
       case "State":
+        curr.outgoingEdges.sort(key=cmp_to_key(sort_edges_compare))
         for edgeID in curr.outgoingEdges:
           edge = stateTracker.get_edge(edgeID)
           if edge.check_condition(frame):
