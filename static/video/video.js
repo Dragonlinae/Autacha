@@ -23,7 +23,7 @@ import { selectedElement } from "../managers/selectedelementManager.js";
   function dragStart(xpos, ypos) {
     xpos = Math.trunc(xpos);
     ypos = Math.trunc(ypos);
-    socket.emit('input_event', { "type": "dragStart", "xpos": xpos, "ypos": ypos });
+    socket.emit('input_event', { "type": "dragStart", "xpos": xpos, "ypos": ypos, "ignoreifscreen": true });
     if (record.active && record.targets.has("dragStart")) {
       timer = Math.round(performance.now());
       record.callback({ "type": "dragStart", "xpos": xpos, "ypos": ypos, "time": 0 });
@@ -33,7 +33,7 @@ import { selectedElement } from "../managers/selectedelementManager.js";
   function dragMove(xpos, ypos) {
     xpos = Math.trunc(xpos);
     ypos = Math.trunc(ypos);
-    socket.volatile.emit('input_event', { "type": "dragMove", "xpos": xpos, "ypos": ypos });
+    socket.volatile.emit('input_event', { "type": "dragMove", "xpos": xpos, "ypos": ypos, "ignoreifscreen": true });
     if (record.active && record.targets.has("dragMove")) {
       record.callback({ "type": "dragMove", "xpos": xpos, "ypos": ypos, "time": Math.round(performance.now()) - timer });
     }
@@ -42,7 +42,7 @@ import { selectedElement } from "../managers/selectedelementManager.js";
   function dragEnd(xpos, ypos) {
     xpos = Math.trunc(xpos);
     ypos = Math.trunc(ypos);
-    socket.emit('input_event', { "type": "dragEnd", "xpos": xpos, "ypos": ypos });
+    socket.emit('input_event', { "type": "dragEnd", "xpos": xpos, "ypos": ypos, "ignoreifscreen": true });
     if (record.active && record.targets.has("dragEnd")) {
       record.callback({ "type": "dragEnd", "xpos": xpos, "ypos": ypos, "time": Math.round(performance.now()) - timer });
       record.active = false;

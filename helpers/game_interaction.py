@@ -124,37 +124,42 @@ class GameInteraction:
       case "hookInputs":
         best_match = float(data["confidence"])
         title = None
-        while title is None:
-          time.sleep(1)
-          if not flag[0]:
-            return {"status": "aborted"}
-          for test_window in self.ahk.list_windows():
-            match_score = SM(None, data["title"], test_window.title).ratio()
-            print(match_score, test_window.title)
-            if match_score >= best_match:
-              best_match = match_score
-              title = test_window.title
-        # print(title, best_match)
-        self.win = self.ahk.win_wait(title=title, timeout=int(data["timeout"]))
-        print(int(data["timeout"]))
-        print("INPUT HOOKED")
-        print(self.win.title)
-        self.window_position = self.win.get_position()._asdict()
-        self.win.to_bottom()
+        if data["title"] != "":
+          while title is None:
+            time.sleep(1)
+            if not flag[0]:
+              return {"status": "aborted"}
+            for test_window in self.ahk.list_windows():
+              match_score = SM(None, data["title"], test_window.title).ratio()
+              print(match_score, test_window.title)
+              if match_score >= best_match:
+                best_match = match_score
+                title = test_window.title
+          # print(title, best_match)
+          self.win = self.ahk.win_wait(
+              title=title, timeout=int(data["timeout"]))
+          print("INPUT HOOKED")
+          print(self.win.title)
+          self.window_position = self.win.get_position()._asdict()
+          self.win.to_bottom()
+        else:
+          self.win = self.ahk
         return {"status": "success"}
 
       case "hookVideo":
         best_match = float(data["confidence"])
         title = None
-        while title is None:
-          time.sleep(1)
-          if not flag[0]:
-            return {"status": "aborted"}
-          for test_window in self.ahk.list_windows():
-            match_score = SM(None, data["title"], test_window.title).ratio()
-            if match_score >= best_match:
-              best_match = match_score
-              title = test_window.title
+        if data["title"] != "":
+          while title is None:
+            time.sleep(1)
+            if not flag[0]:
+              return {"status": "aborted"}
+            for test_window in self.ahk.list_windows():
+              match_score = SM(None, data["title"], test_window.title).ratio()
+              if match_score >= best_match:
+                best_match = match_score
+                title = test_window.title
+              print(match_score, test_window.title)
 
         self.camera = GameCapture(title)
         self.camera.start()
@@ -164,7 +169,7 @@ class GameInteraction:
 
         frame = self.camera.get_last_frame()
         # print(frame.width, frame.height)
-        if self.win is not None:
+        if self.win is self.ahk.windows:
           for control in self.win.list_controls():
             # print(control)
             # print(control.get_position())

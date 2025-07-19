@@ -203,6 +203,9 @@ def import_save():
 @socket.on('input_event')
 def handle_action_event(data):
   global playing
+  ignoreifscreen = data.get("ignoreifscreen", False)
+  if ignoreifscreen and gameInteraction.win is gameInteraction.ahk:
+    return {"status": "success", "message": "Action ignored due to ignoreifscreen flag."}
   element = stateTracker.get_element(data["id"]) if "id" in data else None
   docallback = data.get("callback", False)
   locked = gameLock.acquire(0)
