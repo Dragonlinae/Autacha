@@ -275,11 +275,21 @@ import socket from "../managers/socketManager.js";
 
   function simulateContDrag(div) {
     var dragPoints = JSON.parse(div.querySelector('input[name="vertices"]').value);
+    var coordMode = div.querySelector('select[name="coord-mode"]').value;
     socket.emit('input_event', {
       "type": "dragVertices",
-      "vertices": dragPoints
-      , "callback": true
+      "vertices": dragPoints,
+      "callback": true,
+      "coord-mode": coordMode
     });
+  }
+
+  function invertInputs(div) {
+    var dragPoints = JSON.parse(div.querySelector('input[name="vertices"]').value);
+    for (let i = 0; i < dragPoints.length; i++) {
+      dragPoints[i][3] = 1 - dragPoints[i][3];
+    }
+    div.querySelector('input[name="vertices"]').value = JSON.stringify(dragPoints);
   }
 
   function simulateKey(div) {
@@ -393,6 +403,7 @@ import socket from "../managers/socketManager.js";
   actionListFuncs.simulateClick = simulateClick;
   actionListFuncs.recordContDrag = recordContDrag;
   actionListFuncs.simulateContDrag = simulateContDrag;
+  actionListFuncs.invertInputs = invertInputs;
   actionListFuncs.simulateKey = simulateKey;
   actionListFuncs.recordClickDetect = recordClickDetect;
   actionListFuncs.simulateClickDetect = simulateClickDetect;

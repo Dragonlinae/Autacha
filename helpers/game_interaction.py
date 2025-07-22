@@ -53,9 +53,11 @@ class GameInteraction:
 
       case "dragVertices":
         vertices = data["vertices"]
+        print(data.get("coord-mode"))
+        relative = data.get("coord-mode", "Absolute") == "Relative"
         vertices = [[int(elem) for elem in point] for point in vertices]
         mouse_inputs.drag_mouse_vec(
-            self.win, vertices, self.offset, flag, callback)
+            self.win, vertices, self.offset, flag, callback, relative)
         return {"status": "success"}
 
       case "dragStart":

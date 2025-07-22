@@ -86,12 +86,20 @@
   <label>Vertices:
     <input type="text" name="vertices" value="">
   </label>
+  <label>Coord Mode:
+    <select name="coord-mode">
+      <option value="Absolute">Absolute</option>
+      <option value="Relative">Relative</option>
+    </select>
+  </label>
   <button class="record-cont-drag" name="record-cont-drag"
     onclick="actionListFuncs.recordContDrag(this.parentElement)">Record Continuous
     Drag</button>
   <button class="simulate" name="simulate-cont-drag"
     onclick="actionListFuncs.simulateContDrag(this.parentElement)">Simulate Continuous
     Drag</button>
+  <button name="invert-inputs" onclick="actionListFuncs.invertInputs(this.parentElement)">Invert Inputs</button>
+
 </template>
 
 <template id="action-key-params-template">
