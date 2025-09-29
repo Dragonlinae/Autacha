@@ -71,11 +71,7 @@ def stream_frames():
   img = cv2.imread("image.png")
   img = cv2.imencode(".jpg", img)[1]
   stringData = img.tobytes()
-  yield (b'--frame\r\n'
-         b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n'
-         # Send frame twice to get an ending boundary
-         b'--frame\r\n'
-         b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n')
+  yield (f'data:data:image/jpeg;base64,{base64.b64encode(stringData).decode('utf-8')}\n\n')
 
   frame_number = -1
   while True:
@@ -151,8 +147,7 @@ def stream_frames():
     img = cv2.imencode(".jpg", img)[1]
 
     stringData = img.tobytes()
-    yield (b'--frame\r\n'
-           b'Content-Type: text/plain\r\n\r\n'+stringData+b'\r\n')
+    yield (f'data:data:image/jpeg;base64,{base64.b64encode(stringData).decode("utf-8")}\n\n')
     # time.sleep(0.1)
 
 
@@ -163,7 +158,7 @@ def index():
 
 @app.route("/vid", methods=["GET"])
 def vid():
-  return Response(stream_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+  return Response(stream_frames(), content_type='text/event-stream')
 
 
 @app.route("/all_states", methods=["GET"])
