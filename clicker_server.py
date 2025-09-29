@@ -197,6 +197,7 @@ def import_save():
 
 @socket.on('input_event')
 def handle_action_event(data):
+  print(data)
   global playing
   ignoreifscreen = data.get("ignoreifscreen", False)
   if ignoreifscreen and gameInteraction.win is gameInteraction.ahk:
@@ -207,6 +208,7 @@ def handle_action_event(data):
   if not locked:
     return {"status": "blocked"}
   try:
+    playing[0] = True
     return gameInteraction.input_action(data, element, flag=playing, callback=(click_coord_callback if docallback else None))
   finally:
     gameLock.release()
